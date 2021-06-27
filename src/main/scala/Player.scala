@@ -9,7 +9,7 @@ class Player(name: String, hand: Deck, points: Int) {
   }
   def takeCards(p : Card => Boolean): (Option[Deck], Player) = {
     val (lost, kept) = hand.partition(p)
-    (lost.toOption, Player)
+    (lost.toOption, new Player(name, kept, points))
 
   }
   def hasCardWithRank(rank: Rank): Boolean = {
@@ -31,5 +31,9 @@ object Player {
   // copy constructor
   def apply(player: Player): Player = {
     new Player(player.getName, player.getHand, player.getScore)
+  }
+  // copy but with new hand
+  def apply(player: Player, newHand: Deck): Player = {
+    new Player(player.getName, newHand, player.getScore)
   }
 }

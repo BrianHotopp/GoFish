@@ -1,86 +1,82 @@
-import DeckOfCards.Rank
+import DeckOfCards.{Rank, Deck}
 
 import java.util.UUID
 
 
 
-class GoFish(players: Map[UUID, Player], deck: DeckOfCards.Deck) {
+class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
   // represents a game of go fish
-  val nplayers: Int = players.size
-  def getPlayerName(uuid: UUID): String ={
+  def getPlayerName(uuid: UUID): Option[String] = {
     players.get(uuid) match {
-      case Some(player) => player.getName
-      case _ => "Unknown Player"
+      case Some(player) => Some(player.getName)
+      case _ => None
     }
   }
+
   def getPlayerNames: List[String] = {
-    players.keys.map(x => getPlayerName(x)).toList
+    players.values.map(x => x.getName).toList
   }
-  def playerIds(): List[UUID] = {
+
+  def playerIds: List[UUID] = {
     players.keys.toList
   }
-  def gameOver(): Boolean ={
-    // returns true if all pairs of four are had, false otherwise
-    val totalscore = players.values.map(x => x.getScore()).sum
-    totalscore == 13
-  }
-  def drawFromDeck(drawer: UUID): (Boolean, Either[String, GoFish]) = {
-    // returns a new game state with the player passed in having drawn a card, or an error string
-    players.get(drawer) match {
-      case Some(player) =>
+
+  def gameOver: Boolean = players.values.map(x => x.getScore).sum == 13
+
+  def drawFromDeck(drawerId: UUID): Either[String, (GoFish, Boolean)] = {
+    players.get(drawerId) match {
+      case Some(drawer) => {
         // players who are not the drawer
-        val otherPlayers = players.filter(x => !x._1.equals(drawer))
+        val otherPlayers = players.filter(x => !x._1.equals(drawerId))
         // resulting deck and card from draw action
-        deck.pullFromTop() match {
-          case (Some(x), y) =>
+        val pullResult = deck.pullFromTop()
+
+        pullResult match {
+          case (Some(x), y) => {
             // resulting player from giving the drawer his drawn card
-            val newPlayer: Player = player.giveCard(x)
-            val newDeck: DeckOfCards.Deck = y
-            val needed = player.hasCardWithRank(x.rank)
-            (needed, Right(new GoFish(otherPlayers + (drawer -> newPlayer), newDeck)))
-          case (None, y) => (false, Left("Can't draw: No cards left in the deck!"))
+            val newPlayer: Player = drawer.giveCard(x)
+            val newDeck: Deck = y
+            val needed = drawer.hasCardWithRank(x.rank)
+            Right((new GoFish(nPlayers, otherPlayers + (drawer -> newPlayer), newDeck), needed))
+          }
+          case (None, _) => Left("Can't draw; deck is empty!")
         }
-      case None => (true, Left("Invalid Player!"))
+      }
+      case None => Left("Invalid Player!")
     }
   }
 
-  def askForCard(rank: Rank, asker: UUID, from: UUID): Either[String, Option[GoFish]] ={
-    players.get(asker) match {
-      // check if the asker's uuid is a real player
-      case Some(player) =>
-        if (player.hasCardWithRank(rank)) {
-          // check if the askee's uuid is a real player
-          players.get(from) match {
-            case Some(askee) =>
-              if (askee.hasCardWithRank(rank)) {
-                val res = askee.takeCards(x => x.rank == rank)
-
-                // we got some cards
-                val uninvolvedplayers = players.filter(x => x != asker && x != from)
-                val newasker = player.giveCards(res._1)
-                val newaskee = res._2
-
-                Right(Some(new GoFish(uninvolvedplayers + (asker -> newasker) + (from -> newaskee), deck)))
-              } else {
-                Right(None)
-              }
-            case None => Left("Unknown askee uuid!")
+  def askForCard(wantedRank: Rank, askerId: UUID, askeeId: UUID): Either[String, (GoFish, Boolean)] = {
+    (players.get(askerId), players.get(askeeId)) match {
+      case (Some(asker), Some(askee)) => {
+        (asker.hasCardWithRank(wantedRank), askee.hasCardWithRank(wantedRank)) match {
+          case (true, true) => {
+            val (Some(haul), newAskee) = askee.takeCards(x => x.rank == wantedRank)
+            val uninvolvedPlayers = players.filter(x => (x._1 != askerId) && (x._2 != askeeId))
+            val newAsker = asker.giveCards(haul)
+            val newGameState = new GoFish(nPlayers, uninvolvedPlayers + (askerId -> newAsker) + (askeeId -> newAskee), deck)
+            Right((newGameState, true))
           }
-        } else {
-          Left("You must have at least one card of the rank you are aking for!")
+          case (true, false) => Right((new GoFish(nPlayers, players, deck), false))
+          case (false, true) => Left("You must have at least one card of the rank you are asking for!")
         }
-      case None => Left("Unknown asker uuid!")
+      }
+      case (Some(_), None) => Left(s"Cannot find id ${askeeId} to take cards from!")
+      case (None, Some(_)) => Left(s"Cannot find id ${askerId} to give cards to!")
+      case (None, None) => Left(s"Cannot find asker id ${askerId} nor askee id ${askeeId}")
     }
   }
 }
 object GoFish {
-  def apply(nplayers: Int, names: List[String]): GoFish = {
-//    players: Map[UUID, Player] =
-    val uuids: List[UUID] = List.fill(nplayers)(UUID.randomUUID())
-    val pairs= for(
+  // default constructor
+  def apply(nPlayers: Int = 2, names: List[String] = List("Brian", "Kiara")): GoFish = {
+    val uuids: List[UUID] = List.fill(nPlayers)(UUID.randomUUID())
+    val pairs = for(
       uuid <- uuids;
       name <- names
     ) yield(uuid, Player(name))
-    new GoFish(pairs.toMap, new DeckOfCards.Deck())
+    new GoFish(nPlayers, pairs.toMap, Deck())
   }
+
 }
+
