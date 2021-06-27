@@ -21,6 +21,8 @@ class Player(name: String, hand: Deck, points: Int) {
   def getName = name
 
   def getHand = hand
+
+  def handSize = hand.size
 }
 
 object Player {
