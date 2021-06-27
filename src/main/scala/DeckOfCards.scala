@@ -1,12 +1,5 @@
 import scala.math.ScalaNumericConversions
 import scala.util.Random
-trait test123 {
-  def dontneedthis(): Unit
-
-  def needthis(): Unit ={
-    println("need")
-  }
-}
 
 object DeckOfCards {
 
