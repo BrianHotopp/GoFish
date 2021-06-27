@@ -37,7 +37,7 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
             val newPlayer: Player = drawer.giveCard(x)
             val newDeck: Deck = y
             val needed = drawer.hasCardWithRank(x.rank)
-            Right((new GoFish(nPlayers, otherPlayers + (drawer -> newPlayer), newDeck), needed))
+            Right((new GoFish(nPlayers, otherPlayers + (drawerId -> newPlayer), newDeck), needed))
           }
           case (None, _) => Left("Can't draw; deck is empty!")
         }
@@ -58,11 +58,11 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
             Right((newGameState, true))
           }
           case (true, false) => Right((new GoFish(nPlayers, players, deck), false))
-          case (false, true) => Left("You must have at least one card of the rank you are asking for!")
+          case (false, _) => Left("You must have at least one card of the rank you are asking for!")
         }
       }
-      case (Some(_), None) => Left(s"Cannot find id ${askeeId} to take cards from!")
-      case (None, Some(_)) => Left(s"Cannot find id ${askerId} to give cards to!")
+      case (Some(_), None) => Left(s"Cannot find id ${askerId} to take cards from!")
+      case (None, Some(_)) => Left(s"Cannot find id ${askeeId} to give cards to!")
       case (None, None) => Left(s"Cannot find asker id ${askerId} nor askee id ${askeeId}")
     }
   }

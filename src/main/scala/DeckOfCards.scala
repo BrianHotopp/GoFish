@@ -49,7 +49,7 @@ object DeckOfCards {
 
     def isEmpty = cards.size == 0
 
-    def toOption = if(isEmpty){Some(Deck(cards))}else{None}
+    def toOption = if(isEmpty){None}else{Some(Deck(cards))}
 
     def toList = cards
 
@@ -64,8 +64,12 @@ object DeckOfCards {
     def containsRank(searchRank: Rank): Boolean ={
       cards.map((card) => card.rank).contains(searchRank)
     }
+    def containsCard(card: Card): Boolean = {
+      cards.contains(card)
+    }
     def addDeck(deck: Deck): Deck = {
-       deck.addToTop(cards)
+      val testDeck = Deck(cards)
+      testDeck.addToTop(deck.toList)
     }
     def filter(f: Card => Boolean): Deck = {
       Deck(cards.filter(f))
@@ -73,6 +77,9 @@ object DeckOfCards {
     def partition(f: Card => Boolean): (Deck, Deck) = {
       val tmp = cards.partition(f)
       (Deck(tmp._1), Deck(tmp._2))
+    }
+    def sameCards(other: Deck): Boolean = {
+      other.toList.toSet == cards.toSet
     }
     private def isValidDeck(cards: List[Card]) = cards.size <= 52 && cards.distinct.size == cards.size
 

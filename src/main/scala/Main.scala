@@ -1,63 +1,47 @@
 import scala.io.StdIn.readLine
+import DeckOfCards.Rank
 object Main {
-  def winner(players: Array[Player]): Boolean = {
-    false
-  }
   def main(args: Array[String]): Unit ={
     // while no winner, take turns asking
-    val nplayers = 2
+    val nPlayers = 2
     var turn = 0;
-    var game = GoFish(nplayers, List("Brian", "Kiara"))
-    val uuids = game.playerIds()
-    var decision = ""
-    while(!game.gameOver()){
+    var game = GoFish()
+    val uuids = game.playerIds
+    while(!game.gameOver){
       // allow player to ask for rank
-      val playerName = game.getPlayerName(uuids(turn%nplayers))
+      val playerName = game.getPlayerName(uuids(turn%nPlayers))
       println(s"${playerName}'s turn")
       println("Who would you like to ask?")
-      (1 to nplayers).foreach(n => println(s"${n}, ${game.getPlayerName(uuids(n-1))}"))
-      // todo validate this input
-      val from = readLine()
+      (1 to nPlayers).foreach(n => println(s"${n}, ${game.getPlayerName(uuids(n-1))}"))
+      val playerChoiceOption = readLine().toIntOption
       println("What would you like to ask for?")
       (1 to 13).foreach(n => println(s"${n} "))
-      val cardChoice = readLine().toIntOption
-      cardChoice match {
-        case Some(validNumber) => {
-          DeckOfCards.rankFromNumber(validNumber) match {
-            case Some(rank) =>
-              game.askForCard(rank, uuids(turn%nplayers), uuids(from.toInt)) match {
-                case Right(potentialGameState) => potentialGameState match {
-                  case Some(gamestate) => game = gamestate
-                  case None => {
-                    println("Go Fish!")
-                    val drawres = game.drawFromDeck(uuids(turn%nplayers))
-                    drawres match {
-                      case (true, res) => {
-                        res match {
-                          case Right(gamestate) => game = gamestate
-                          case Left(errstr) => println(errstr)
-                        }
-                      }
-                      case (false, res) => {
-                        res match {
-                          case Right(gamestate) => {
-                            turn = turn+1
-                            game = gamestate
-                          }
-                          case Left(errstr) => println(errstr)
-                        }
-                      }
+      val cardChoiceOption = readLine().toIntOption
 
-                    }
-                  }
-                }
-                case Left(error) => println(error)
-              }
-            case None => println("Input number doesn't correspond to a rank!")
+      (playerChoiceOption, cardChoiceOption) match {
+        case (Some(playerChoice), Some(cardChoice)) => {
+          val askerId = uuids(turn%nPlayers)
+          val askeeId = uuids(playerChoice)
+          // todo fix rank validation
+          val wantedRank = Rank(cardChoice)
+          game.askForCard(wantedRank, askerId, askeeId) match {
+            case Right((newGameState, true)) => {
+              println("Successfully stole!")
+              game = newGameState
+            }
+            case Right((newGameState, false)) => {
+              println("Go fish!")
+              game = newGameState
+              // todo go fishing in deck
+            }
+            case Left(err) => println(err)
           }
         }
-        case None => println("Invalid Number! You must choose a number between one (Ace) and 13 (King)")
+        case (None, Some(_)) => println(s"Invalid person; please enter a number 1-${nPlayers}")
+        case (Some(_), None) => println("Invalid card rank; please enter a number 1-13")
+        case (None, None) => println(s"Invalid person and invalid rank; please enter a number 1-${nPlayers} and a number 1-13")
       }
+
       }
   }
 }

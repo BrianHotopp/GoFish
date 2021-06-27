@@ -26,7 +26,7 @@ class Player(name: String, hand: Deck, points: Int) {
 object Player {
   // default constructor
   def apply(name: String): Player = {
-   new Player(name, Deck(),0)
+   new Player(name, Deck(List()),0)
   }
   // copy constructor
   def apply(player: Player): Player = {
