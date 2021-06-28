@@ -16,6 +16,9 @@ class Player(name: String, hand: Deck, points: Int) {
     // returns true if player has at least one card of the passed in rank in their hand
     hand.containsRank(rank)
   }
+  def hasCard(card: Card): Boolean = {
+    hand.containsCard(card)
+  }
   def getScore = points
 
   def getName = name

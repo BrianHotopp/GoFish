@@ -1,4 +1,4 @@
-import DeckOfCards.{Rank, Deck}
+import DeckOfCards.{Card, Deck, Rank}
 
 import java.util.UUID
 
@@ -20,9 +20,14 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
   def playerIds: List[UUID] = {
     players.keys.toList
   }
-
+  def deckSize = deck.size
   def gameOver: Boolean = players.values.map(x => x.getScore).sum == 13
-
+  def playerHas(uuid: UUID, card: Card): Boolean ={
+    players.get(uuid) match {
+      case Some(player) => player.hasCard(card)
+      case None => false
+    }
+  }
   def drawFromDeck(drawerId: UUID): Either[String, (GoFish, Boolean)] = {
     players.get(drawerId) match {
       case Some(drawer) => {
@@ -72,9 +77,8 @@ object GoFish {
   def apply(nPlayers: Int = 2, names: List[String] = List("Brian", "Kiara")): GoFish = {
     val uuids: List[UUID] = List.fill(nPlayers)(UUID.randomUUID())
     val pairs = for(
-      uuid <- uuids;
-      name <- names
-    ) yield(uuid, Player(name))
+      n <- 0 to nPlayers-1
+    ) yield(uuids(n), Player(names(n)))
     new GoFish(nPlayers, pairs.toMap, Deck())
   }
 
