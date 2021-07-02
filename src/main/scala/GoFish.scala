@@ -1,4 +1,4 @@
-import DeckOfCards.{Card, Deck, Rank}
+import DeckOfCards.{Card, Deck, Heart, Rank, Spade, Two}
 
 import java.util.UUID
 
@@ -28,6 +28,26 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
     players.get(uuid) match {
       case Some(player) => player.hasCard(card)
       case None => false
+    }
+  }
+
+  def dealToAll(numCards: Int): Option[GoFish] = {
+    val totalCards = numCards*nPlayers
+    if(totalCards > deck.size){
+      None
+    }else{
+      val (toDistribute, newDeck) = deck.toList.splitAt(totalCards)
+      val newPlayers = players.zipWithIndex.map(x=>{
+        x._1._1->
+        Player(x._1._2, Deck(
+          for{
+            (card, index) <- toDistribute.zipWithIndex if index % nPlayers == x._2
+          }yield{
+           card
+          }
+        ))
+      }).toMap
+      Some(new GoFish(nPlayers, newPlayers, Deck(newDeck)))
     }
   }
   def drawFromDeck(drawerId: UUID): Either[String, (GoFish, Boolean)] = {
@@ -82,7 +102,6 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
     // construct new GoFish
     (new GoFish(nPlayers, newPlayers, deck), delta)
   }
-
 }
 object GoFish {
   // default constructor
@@ -93,6 +112,6 @@ object GoFish {
     ) yield(uuids(n), Player(names(n)))
     new GoFish(nPlayers, pairs.toMap, Deck())
   }
-
 }
+
 

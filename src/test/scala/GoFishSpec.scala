@@ -116,4 +116,24 @@ class GoFishSpec extends FlatSpec {
       case _ => assert(false)
     }
   }
+  it should "properly deal n cards to m players from the deck" in {
+    val game = GoFish().dealToAll(4)
+    game match {
+      case Some(game) => {
+        val playersList = game.getPlayers.values.toList
+        val p1 = playersList(0)
+        val p2 = playersList(1)
+        val (twoSpade, twoClub, twoHeart, twoDiamond) = (Card(Two, Spade), Card(Two, Club), Card(Two, Heart), Card(Two, Diamond))
+        val (threeSpade, threeClub, threeHeart, threeDiamond) = (Card(Three, Spade), Card(Three, Club), Card(Three, Heart), Card(Three, Diamond))
+        println(p1.getHand.toList)
+        println(p2.getHand.toList)
+        assert(p1.handSize == 4)
+        assert(p2.handSize == 4)
+        assert(p1.hasCard(twoSpade) && p1.hasCard(twoClub) && p1.hasCard(threeSpade) && p1.hasCard(threeClub))
+        assert(p2.hasCard(twoHeart) && p2.hasCard(twoDiamond) && p2.hasCard(threeHeart) && p2.hasCard(threeDiamond))
+      }
+      case _ => assert(false)
+    }
+  }
+
 }

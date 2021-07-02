@@ -7,12 +7,19 @@ object Main {
     var turn = 0
     var game = GoFish()
     val uuids = game.playerIds
+    // deal and make pairs
     while(!game.gameOver){
       // allow player to ask for rank
       val playerName = game.getPlayerName(uuids(turn%nPlayers))
       println(s"$playerName's turn")
       println("Who would you like to ask?")
-      (1 to nPlayers).foreach(n => println(s"$n, ${game.getPlayerName(uuids(n-1))}"))
+      (1 to nPlayers).foreach(n => {
+        val name = game.getPlayerName(uuids(n-1)) match {
+          case Some(name) => name
+          case _ => "Unknown Player"
+        }
+        println(s"$n, ${name}")
+      })
       val playerChoiceOption = readLine().toIntOption
       println("What would you like to ask for?")
       (1 to 13).foreach(n => println(s"$n "))
@@ -46,6 +53,17 @@ object Main {
         case (Some(_), None) => println("Invalid card rank; please enter a number 1-13")
         case (None, None) => println(s"Invalid person and invalid rank; please enter a number 1-$nPlayers and a number 1-13")
       }
+      val paired = game.makeGroups
+      game = paired._1
+      // report grouping
+      paired._2.foreachEntry((uuid, delta) => {
+        val name = game.getPlayerName(uuid) match {
+          case Some(name) => name
+          case _ => "Unknown Player"
+        }
+        delta.foreach(rank=>println(s"${name})} made a pair with $rank"))
+      }
+      )
       }
   }
 }
