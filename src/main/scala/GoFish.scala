@@ -12,11 +12,13 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
       case _ => None
     }
   }
-
+  def getPlayerScore(uuid: UUID): Option[Int] = {
+    players.get(uuid).map(x=>x.getScore)
+  }
   def getPlayerNames: List[String] = {
     players.values.map(x => x.getName).toList
   }
-
+  def getPlayers: Map[UUID, Player] = players
   def playerIds: List[UUID] = {
     players.keys.toList
   }
@@ -71,10 +73,16 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
       case (None, None) => Left(s"Cannot find asker id ${askerId} nor askee id ${askeeId}")
     }
   }
-//  def takePoints(): Either[String, (GoFish, Map[UUID, Rank])] = {
-//    players.values.map(player => Player(player.))
-//
-//  }
+  def makeGroups: (GoFish, Map[UUID, List[Rank]]) = {
+    // idempotent
+    // how do I write this without triple mapping
+    val groupResult = players.map(x=>x._1 -> x._2.makeGroups)
+    val newPlayers = groupResult.map(x=> x._1->x._2._1)
+    val delta = groupResult.map(x=>x._1->x._2._2)
+    // construct new GoFish
+    (new GoFish(nPlayers, newPlayers, deck), delta)
+  }
+
 }
 object GoFish {
   // default constructor

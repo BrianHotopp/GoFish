@@ -32,10 +32,10 @@ class PlayerSpec extends FlatSpec {
     val testResult4 = testPlayer4.makeGroups
 
     assert(testPlayer4.handSize == 12 && !testPlayer4.getRanks.contains(Two))
-    assert(testResult1.handSize == 0 && testResult1.getScore == 0 && !testResult1.getRanks.contains(Two))
-    assert(testResult2.handSize == 0 && testResult2.getScore == 1 && testResult2.getRanks.contains(Two))
-    assert(testResult3.handSize == 0 && testResult3.getScore == 2 && testResult3.getRanks.contains(Two) && testResult3.getRanks.contains(Three))
-    assert(testResult4.handSize == 4 && testResult4.getScore == 2 && testResult4.getRanks.contains(Two) && testResult4.getRanks.contains(Three) && !testResult4.getRanks.contains(Queen))
+    assert(testResult1._1.handSize == 0 && testResult1._1.getScore == 0 && !testResult1._1.getRanks.contains(Two))
+    assert(testResult2._1.handSize == 0 && testResult2._1.getScore == 1 && testResult2._1.getRanks.contains(Two))
+    assert(testResult3._1.handSize == 0 && testResult3._1.getScore == 2 && testResult3._1.getRanks.contains(Two) && testResult3._1.getRanks.contains(Three))
+    assert(testResult4._1.handSize == 4 && testResult4._1.getScore == 2 && testResult4._1.getRanks.contains(Two) && testResult4._1.getRanks.contains(Three) && !testResult4._1.getRanks.contains(Queen))
   }
 }
 
