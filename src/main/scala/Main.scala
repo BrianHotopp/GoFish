@@ -17,31 +17,41 @@ object Main {
       println("What would you like to ask for?")
       (1 to 13).foreach(n => println(s"${n} "))
       val cardChoiceOption = readLine().toIntOption
-
+      // ask/fish logic
       (playerChoiceOption, cardChoiceOption) match {
         case (Some(playerChoice), Some(cardChoice)) => {
-          val askerId = uuids(turn%nPlayers)
-          val askeeId = uuids(playerChoice)
-          // todo fix rank validation
-          val wantedRank = Rank(cardChoice)
-          game.askForCard(wantedRank, askerId, askeeId) match {
-            case Right((newGameState, true)) => {
-              println("Successfully stole!")
-              game = newGameState
+          if(playerChoice > 0 && playerChoice <= nPlayers){
+            val askerId = uuids(turn%nPlayers)
+            val askeeId = uuids(playerChoice-1)
+            // todo fix rank validation
+            val wantedRank = Rank(cardChoice)
+            game.askForCard(wantedRank, askerId, askeeId) match {
+              case Right((newGameState, true)) => {
+                println("Successfully stole!")
+                game = newGameState
+              }
+              case Right((newGameState, false)) => {
+                println("Go fish!")
+                game.drawFromDeck(askerId) match {
+                  case Right((stateAfterDraw, true)) => {
+                    game = stateAfterDraw
+                  }
+                  case Right((stateAfterDraw, false)) => {
+                    game = stateAfterDraw
+                    turn+=1
+                  }
+                  case Left(err) => println(err)
+                }
+              }
+              case Left(err) => println(err)
             }
-            case Right((newGameState, false)) => {
-              println("Go fish!")
-              game = newGameState
-              // todo go fishing in deck
-            }
-            case Left(err) => println(err)
           }
+
         }
         case (None, Some(_)) => println(s"Invalid person; please enter a number 1-${nPlayers}")
         case (Some(_), None) => println("Invalid card rank; please enter a number 1-13")
         case (None, None) => println(s"Invalid person and invalid rank; please enter a number 1-${nPlayers} and a number 1-13")
       }
-
       }
   }
 }

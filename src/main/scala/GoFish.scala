@@ -57,7 +57,7 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
         (asker.hasCardWithRank(wantedRank), askee.hasCardWithRank(wantedRank)) match {
           case (true, true) => {
             val (Some(haul), newAskee) = askee.takeCards(x => x.rank == wantedRank)
-            val uninvolvedPlayers = players.filter(x => (x._1 != askerId) && (x._2 != askeeId))
+            val uninvolvedPlayers = players.filter(x => (x._1 != askerId) && (x._1 != askeeId))
             val newAsker = asker.giveCards(haul)
             val newGameState = new GoFish(nPlayers, uninvolvedPlayers + (askerId -> newAsker) + (askeeId -> newAskee), deck)
             Right((newGameState, true))
@@ -71,6 +71,10 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
       case (None, None) => Left(s"Cannot find asker id ${askerId} nor askee id ${askeeId}")
     }
   }
+//  def takePoints(): Either[String, (GoFish, Map[UUID, Rank])] = {
+//    players.values.map(player => Player(player.))
+//
+//  }
 }
 object GoFish {
   // default constructor
