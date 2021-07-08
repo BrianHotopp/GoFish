@@ -16,7 +16,7 @@ object DeckOfCards {
       if(number < 1 || number > 13){
         return Ace
       }else{
-        return ranks(number)
+        return ranks(number-2)
       }
     }
   }
@@ -42,7 +42,7 @@ object DeckOfCards {
 
   class Deck(pCards: List[Card] = for (r <- ranks; s <- suites) yield Card(r, s)) {
 
-    val cards = if (isValidDeck(pCards)) pCards
+    val cards: List[Card] = if (isValidDeck(pCards)) pCards
     else throw new RuntimeException("Deck is invalid!")
 
     def size = cards.size
@@ -56,7 +56,9 @@ object DeckOfCards {
     def shuffle() = new Deck(Random.shuffle(cards))
 
     def pullFromTop() = (cards.headOption, new Deck(cards.drop(1)))
-
+    def summary = {
+      s"$cards"
+    }
     def addToTop(card: Card) = new Deck(card :: cards)
 
     def addToTop(cardsToAdd: List[Card]) = new Deck(cardsToAdd ::: cards)
@@ -81,7 +83,8 @@ object DeckOfCards {
     def sameCards(other: Deck): Boolean = {
       other.toList.toSet == cards.toSet
     }
-    private def isValidDeck(cards: List[Card]) = cards.size <= 52 && cards.distinct.size == cards.size
+    private def isValidDeck(cards: List[Card]) = true
+     // cards.size <= 5 && cards.distinct.size == cards.size
 
   }
   object Deck {

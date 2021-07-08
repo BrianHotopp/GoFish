@@ -9,8 +9,11 @@ class Player(name: String, hand: Deck, points: Int, ranks: List[Rank]) {
   }
   def takeCards(p : Card => Boolean): (Option[Deck], Player) = {
     val (lost, kept) = hand.partition(p)
+    print(s"LOST: ${lost.cards}\nKEPT: ${kept.cards}")
     (lost.toOption, new Player(name, kept, points, ranks))
-
+  }
+  def summary = {
+    s"name: $name, hand (${hand.size}) cards: ${hand.summary}, pts: $points, ranks: $ranks"
   }
   def makeGroups: (Player, List[Rank]) = {
     // returns the player with their pairs converted to points and removed from their hands
@@ -21,7 +24,7 @@ class Player(name: String, hand: Deck, points: Int, ranks: List[Rank]) {
     val newhand = Deck(remain.flatten.toList)
     val newpoints = group.size
     val newranks = group.map(x=>x.head.rank).toList
-    (new Player(name, newhand, newpoints, newranks ++ ranks), newranks)
+    (new Player(name, newhand, newpoints+points, newranks ++ ranks), newranks)
   }
   def hasCardWithRank(rank: Rank): Boolean = {
     // returns true if player has at least one card of the passed in rank in their hand

@@ -30,7 +30,10 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
       case None => false
     }
   }
-
+  def printPlayers: Unit = {
+    players.values.foreach(x=>println(x.summary))
+  }
+  def shuffle = new GoFish(nPlayers, players, deck.shuffle())
   def dealToAll(numCards: Int): Option[GoFish] = {
     val totalCards = numCards*nPlayers
     if(totalCards > deck.size){
@@ -78,7 +81,10 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
       case (Some(asker), Some(askee)) => {
         (asker.hasCardWithRank(wantedRank), askee.hasCardWithRank(wantedRank)) match {
           case (true, true) => {
-            val (Some(haul), newAskee) = askee.takeCards(x => x.rank == wantedRank)
+            val (Some(haul), newAskee) = {
+              println(s"wanted rank: $wantedRank")
+              askee.takeCards(x => x.rank == wantedRank)
+            }
             val uninvolvedPlayers = players.filter(x => (x._1 != askerId) && (x._1 != askeeId))
             val newAsker = asker.giveCards(haul)
             val newGameState = new GoFish(nPlayers, uninvolvedPlayers + (askerId -> newAsker) + (askeeId -> newAskee), deck)
@@ -94,6 +100,9 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
     }
   }
   def makeGroups: (GoFish, Map[UUID, List[Rank]]) = {
+    // take groups of 4 from hand
+    // construct new players with scores, ranks and hands newly created
+    // construct delta group for info passing
     // idempotent
     // how do I write this without triple mapping
     val groupResult = players.map(x=>x._1 -> x._2.makeGroups)

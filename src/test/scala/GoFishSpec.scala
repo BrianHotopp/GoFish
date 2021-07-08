@@ -131,6 +131,7 @@ class GoFishSpec extends FlatSpec {
         assert(p2.handSize == 4)
         assert(p1.hasCard(twoSpade) && p1.hasCard(twoClub) && p1.hasCard(threeSpade) && p1.hasCard(threeClub))
         assert(p2.hasCard(twoHeart) && p2.hasCard(twoDiamond) && p2.hasCard(threeHeart) && p2.hasCard(threeDiamond))
+        assert(game.deckSize == 44)
       }
       case _ => assert(false)
     }
