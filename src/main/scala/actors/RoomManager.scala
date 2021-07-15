@@ -1,12 +1,13 @@
 package actors
+import akka.actor.UntypedAbstractActor
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 
 import java.util.UUID
 object RoomManager {
   sealed trait Command
-  final case class CreateRoom(roomId: UUID ) extends Command
-  final case class DeleteRoom(roomId: UUID) extends Command
+  final case class CreateRoom(replyTo: UUID) extends Command
+  final case class DeleteRoom(roomId: UUID, replyTo: ) extends Command
 
   final case class RoomManagerData(rooms: Map[UUID, ActorRef[Room.Command]]) {
     def addRoom(roomId: UUID, roomActor: ActorRef[Room.Command]): RoomManagerData = {
