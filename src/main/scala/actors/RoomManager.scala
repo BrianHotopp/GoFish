@@ -6,8 +6,11 @@ import akka.actor.typed.{ActorRef, Behavior}
 import java.util.UUID
 object RoomManager {
   sealed trait Command
-  final case class CreateRoom(replyTo: UUID) extends Command
-  final case class DeleteRoom(roomId: UUID, replyTo: ) extends Command
+  final case class CreateRoom(replyTo: ActorRef[Response]) extends Command
+  final case class DeleteRoom(roomId: UUID) extends Command
+  final case class RoomResponseWrapper(response: RoomManager.Response) extends Command
+  sealed trait Response
+  final case class RoomId(value: String) extends Response
 
   final case class RoomManagerData(rooms: Map[UUID, ActorRef[Room.Command]]) {
     def addRoom(roomId: UUID, roomActor: ActorRef[Room.Command]): RoomManagerData = {
@@ -27,10 +30,11 @@ object RoomManager {
     Behaviors.receive(
       onMessage = (context: ActorContext[RoomManager.Command], command: RoomManager.Command) => {
         command match {
-          case CreateRoom(roomId) =>
+          case CreateRoom(replyTo) =>
             context.log.info("Room Manager Received Create Room")
             val newUuid = UUID.randomUUID()
             val roomHandle: ActorRef[Room.Command] = context.spawn(Room.roomBehavior(Room.RoomData.empty), newUuid.toString)
+            replyTo ! RoomId(newUuid.toString)
             roomManagerBehavior(roomData.addRoom(newUuid, roomHandle))
           case DeleteRoom(roomId) =>
             context.log.info(s"Room Manager Received Delete Room UUID: $roomId")

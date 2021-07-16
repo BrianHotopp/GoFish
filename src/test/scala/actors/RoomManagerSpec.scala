@@ -13,8 +13,8 @@ class RoomManagerSpec
   it should "create a room and return a room UUID"
   val pinger = testKit.spawn(RoomManager(), "manager1")
   val probe = testKit.createTestProbe[RoomManager.Command]()
-  pinger !
-  probe.expectMessage(Echo.Pong("hello"))
+  //pinger !
+  //probe.expectMessage(Echo.Pong("hello"))
 }
 
 

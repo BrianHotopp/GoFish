@@ -2,16 +2,70 @@ import scala.io.StdIn.readLine
 import DeckOfCards.Rank
 import actors.{Room, RoomManager}
 import akka.NotUsed
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
+import akka.actor.typed.{ActorRef, ActorSystem, Props, SpawnProtocol}
+import akka.actor.typed.scaladsl.Behaviors
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
+import akka.http.scaladsl.server.Directives.{complete, get, path}
+import akka.util.Timeout
+import config.ApiConfig
+import org.slf4j.{Logger, LoggerFactory}
+import web.API
 
 import java.util.UUID
-object Main {
-  def main(args: Array[String]) = {
-    val manager: ActorSystem[RoomManager.Command] = ActorSystem(RoomManager(), "Manager")
-    manager ! RoomManager.CreateRoom(UUID.randomUUID())
-  }
+import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.duration.DurationInt
+import scala.io.StdIn
+import scala.language.implicitConversions
+import scala.util.{Failure, Success}
 
+object GoFishApp {
+
+
+  val log: Logger = LoggerFactory.getLogger("GoFishAppMain")
+  def main(args: Array[String]): Unit = {
+
+
+    implicit val system =  ActorSystem(Behaviors.setup[SpawnProtocol.Command](_ => SpawnProtocol()), "go-fish")
+    implicit val timeout: Timeout = 3.seconds
+
+    val roomManagerFuture: Future[ActorRef[RoomManager.Command]] = system.ask { ref =>
+      SpawnProtocol.Spawn(RoomManager(), "room-manager", Props.empty, ref)
+    }
+    implicit val ec: ExecutionContextExecutor = system.executionContext
+    val apiConfig: ApiConfig = ApiConfig.load(system.settings.config)
+    roomManagerFuture.onComplete {
+      case Success(roomManager) =>
+        val api = API(roomManager, apiConfig)
+        api.run()
+      case Failure(exception) =>
+        log.error("Error creating room manager {}", exception)
+    }
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //object Main {
 //
 //  def main(args: Array[String]): Unit = {
