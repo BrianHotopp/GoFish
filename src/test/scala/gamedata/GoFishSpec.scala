@@ -1,9 +1,11 @@
-import DeckOfCards.{Card, Club, Deck, Diamond, Heart, King, Queen, Spade, Three, Two}
-import org.scalatest.{EitherValues, FlatSpec, OptionValues}
+package gamedata
+
+import gamedata.DeckOfCards._
+import org.scalatest.FlatSpec
 
 import java.util.UUID
 class GoFishSpec extends FlatSpec {
-  "GoFish" should "report correct player name given a UUID" in {
+  "gamedata.GoFish" should "report correct player name given a UUID" in {
     val testGoFish = GoFish()
     val tmp = testGoFish.getPlayerName(testGoFish.playerIds(0)) match {
       case Some(name) => name == "Brian"

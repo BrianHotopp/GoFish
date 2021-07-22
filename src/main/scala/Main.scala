@@ -1,5 +1,5 @@
 import scala.io.StdIn.readLine
-import DeckOfCards.Rank
+import gamedata.DeckOfCards.Rank
 import actors.{Room, RoomManager}
 import akka.NotUsed
 import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
@@ -72,7 +72,7 @@ object GoFishApp {
 //    // while no winner, take turns asking
 //    val nPlayers = 2
 //    var turn = 0
-//    var game = GoFish()
+//    var game = gamedata.GoFish()
 //    //.shuffle
 //    val uuids = game.playerIds
 //    // deal and make pairs
@@ -87,7 +87,7 @@ object GoFishApp {
 //      // allow player to ask for rank
 //      val playerName = game.getPlayerName(uuids(turn % nPlayers)) match {
 //        case Some(name) => name
-//        case _ => "Unknown Player"
+//        case _ => "Unknown gamedata.Player"
 //      }
 //      println(s"$playerName's turn")
 //
@@ -157,7 +157,7 @@ object GoFishApp {
 //      paired._2.foreachEntry((uuid, delta) => {
 //        val name = game.getPlayerName(uuid) match {
 //          case Some(name) => name
-//          case _ => "Unknown Player"
+//          case _ => "Unknown gamedata.Player"
 //        }
 //        delta.foreach(rank => println(s"${name})} made a pair with $rank"))
 //      }

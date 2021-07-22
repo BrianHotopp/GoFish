@@ -5,6 +5,7 @@ import akka.actor.typed.{ActorRef, ActorSystem, SpawnProtocol}
 import akka.actor.typed.SpawnProtocol.Spawn
 import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.adapter.TypedActorRefOps
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
@@ -12,7 +13,10 @@ import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import config.ApiConfig
 import org.slf4j.{Logger, LoggerFactory}
+import websocket.WS
 
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 import scala.concurrent.Future
 import scala.io.StdIn
@@ -47,18 +51,17 @@ class API(roomManager: ActorRef[RoomManager.Command], apiConfig: ApiConfig)(impl
           }
         }
       },
-//      path("websocket" / JavaUUID / Remaining) { (roomId, encodedName) =>
-//        log.debug("Websocket call: {} {}", roomId, encodedName)
-//        handleWebSocketMessages(
-//          WS.handler(
-//            roomId,
-//            URLDecoder.decode(encodedName, StandardCharsets.UTF_8.name()),
-//            roomManager.toClassic
-//          )
-//        )
-//      }
+      path("websocket" / JavaUUID / Remaining) { (roomId, encodedName) =>
+        log.debug("Websocket call: {} {}", roomId, encodedName)
+        handleWebSocketMessages(
+          WS.handler(
+            roomId,
+            URLDecoder.decode(encodedName, StandardCharsets.UTF_8.name()),
+            roomManager.toClassic
+          )
+        )
+      }
     )
-
   def run(): Future[Http.ServerBinding] = {
     log.info("Starting API on host port {}:{}", apiConfig.host, apiConfig.port)
     Http().newServerAt(apiConfig.host, apiConfig.port).bind(route)

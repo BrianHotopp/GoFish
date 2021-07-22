@@ -1,10 +1,12 @@
-import DeckOfCards.{Card, Deck, Heart, Rank, Spade, Two}
+package gamedata
+
+import gamedata.DeckOfCards.{Card, Deck, Rank}
 
 import java.util.UUID
 
 
 
-class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
+class GoFish(nPlayers: Int, players: Map[UUID, PlayerData], deck: Deck) {
   // represents a game of go fish
   def getPlayerName(uuid: UUID): Option[String] = {
     players.get(uuid) match {
@@ -18,7 +20,7 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
   def getPlayerNames: List[String] = {
     players.values.map(x => x.getName).toList
   }
-  def getPlayers: Map[UUID, Player] = players
+  def getPlayers: Map[UUID, PlayerData] = players
   def playerIds: List[UUID] = {
     players.keys.toList
   }
@@ -64,7 +66,7 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
         pullResult match {
           case (Some(x), y) => {
             // resulting player from giving the drawer his drawn card
-            val newPlayer: Player = drawer.giveCard(x)
+            val newPlayer: PlayerData = drawer.giveCard(x)
             val newDeck: Deck = y
             val needed = drawer.hasCardWithRank(x.rank)
             Right((new GoFish(nPlayers, otherPlayers + (drawerId -> newPlayer), newDeck), needed))
@@ -72,7 +74,7 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
           case (None, _) => Left("Can't draw; deck is empty!")
         }
       }
-      case None => Left("Invalid Player!")
+      case None => Left("Invalid gamedata.Player!")
     }
   }
 
@@ -108,7 +110,7 @@ class GoFish(nPlayers: Int, players: Map[UUID, Player], deck: Deck) {
     val groupResult = players.map(x=>x._1 -> x._2.makeGroups)
     val newPlayers = groupResult.map(x=> x._1->x._2._1)
     val delta = groupResult.map(x=>x._1->x._2._2)
-    // construct new GoFish
+    // construct new gamedata.GoFish
     (new GoFish(nPlayers, newPlayers, deck), delta)
   }
 }

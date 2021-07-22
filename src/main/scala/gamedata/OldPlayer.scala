@@ -1,21 +1,24 @@
-import DeckOfCards.{Card, Deck, Rank}
+package gamedata
+import gamedata.DeckOfCards.{Card, Deck, Rank}
+import akka.actor.{ActorRef => UntypedRef}
+import java.util.UUID
 
-class Player(name: String, hand: Deck, points: Int, ranks: List[Rank]) {
-  def giveCard(card: Card): Player = {
-    new Player(name, hand.addToTop(card), points, ranks)
+case class Player(id: UUID, ref: UntypedRef, name: String, hand: Deck, points: Int, ranks: List[Rank]) {
+  def giveCard(card: Card): PlayerData = {
+    this.copy(hand = hand.addToTop(card))
   }
-  def giveCards(toGive: Deck): Player ={
-    new Player(name, hand.addDeck(toGive), points, ranks)
+  def giveCards(toGive: Deck): PlayerData ={
+    this.copy(hand=hand.addDeck(toGive))
   }
-  def takeCards(p : Card => Boolean): (Option[Deck], Player) = {
+  def takeCards(p : Card => Boolean): (Option[Deck], PlayerData) = {
     val (lost, kept) = hand.partition(p)
     print(s"LOST: ${lost.cards}\nKEPT: ${kept.cards}")
-    (lost.toOption, new Player(name, kept, points, ranks))
+    (lost.toOption, this.copy(hand=kept))
   }
   def summary = {
     s"name: $name, hand (${hand.size}) cards: ${hand.summary}, pts: $points, ranks: $ranks"
   }
-  def makeGroups: (Player, List[Rank]) = {
+  def makeGroups: (PlayerData, List[Rank]) = {
     // returns the player with their pairs converted to points and removed from their hands
     // and the Ranks they "paired" added to their ranks array
     // ._2 is the Ranks they paired
@@ -24,7 +27,7 @@ class Player(name: String, hand: Deck, points: Int, ranks: List[Rank]) {
     val newhand = Deck(remain.flatten.toList)
     val newpoints = group.size
     val newranks = group.map(x=>x.head.rank).toList
-    (new Player(name, newhand, newpoints+points, newranks ++ ranks), newranks)
+    (this.copy(hand=newhand, points = newpoints + points ,ranks=newranks++ranks), newranks)
   }
   def hasCardWithRank(rank: Rank): Boolean = {
     // returns true if player has at least one card of the passed in rank in their hand
@@ -44,17 +47,4 @@ class Player(name: String, hand: Deck, points: Int, ranks: List[Rank]) {
   def getRanks: List[Rank] = ranks
 }
 
-object Player {
-  // default constructor
-  def apply(name: String): Player = {
-   new Player(name, Deck(List()),0, List())
-  }
-  // copy constructor
-  def apply(player: Player): Player = {
-    new Player(player.getName, player.getHand, player.getScore, player.getRanks)
-  }
-  // copy but with new hand
-  def apply(player: Player, newHand: Deck): Player = {
-    new Player(player.getName, newHand, player.getScore, player.getRanks)
-  }
-}
+

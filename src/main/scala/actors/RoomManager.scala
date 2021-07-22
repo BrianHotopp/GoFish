@@ -1,29 +1,24 @@
 package actors
-import akka.actor.UntypedAbstractActor
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import websocket.WSMessage
 
 import java.util.UUID
 object RoomManager {
   sealed trait Command
   final case class CreateRoom(replyTo: ActorRef[Response]) extends Command
-  final case class DeleteRoom(roomId: UUID) extends Command
+  final case class IncomeWSMessage(message: WSMessage)                 extends Command
+  final case object UnsupportedWSMessage                               extends Command
+  final case class WSCompleted(roomId: UUID, userId: UUID)             extends Command
+  final case class WSFailure(t: Throwable)                             extends Command
+  final case class CompleteWS()                                        extends Command
+  final case class ConnectToRoom(message: WSMessage, user: UntypedRef) extends Command
   final case class RoomResponseWrapper(response: RoomManager.Response) extends Command
+
   sealed trait Response
   final case class RoomId(value: String) extends Response
 
-  final case class RoomManagerData(rooms: Map[UUID, ActorRef[Room.Command]]) {
-    def addRoom(roomId: UUID, roomActor: ActorRef[Room.Command]): RoomManagerData = {
-     this.copy(rooms = this.rooms + (roomId -> roomActor))
-    }
-    def removeRoom(roomId: UUID): RoomManagerData = {
-      this.copy(rooms = this.rooms - roomId)
-    }
-  }
 
-  object RoomManagerData {
-    val empty: RoomManagerData = RoomManagerData(rooms = Map.empty[UUID, ActorRef[Room.Command]])
-  }
 
   def apply(): Behavior[RoomManager.Command] = roomManagerBehavior(RoomManagerData.empty)
   def roomManagerBehavior(roomData: RoomManagerData): Behavior[RoomManager.Command] =

@@ -12,7 +12,9 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaV
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % AkkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
-
+libraryDependencies += "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.2"
 val circeVersion = "0.14.1"
 
 libraryDependencies ++= Seq(

@@ -1,4 +1,6 @@
-import DeckOfCards.{Card, Club, Deck, Four, Heart, Spade, Three, Two}
+package gamedata
+
+import gamedata.DeckOfCards._
 import org.scalatest.FlatSpec
 class DeckOfCardsSpec extends FlatSpec {
   "A deck of cards" should "report the right size" in {

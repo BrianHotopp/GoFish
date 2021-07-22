@@ -1,4 +1,6 @@
-import DeckOfCards.{Ace, Card, Club, Deck, Diamond, Heart, King, Queen, Spade, Three, Two}
+package gamedata
+
+import gamedata.DeckOfCards._
 import org.scalatest.FlatSpec
 class PlayerSpec extends FlatSpec {
   "A player" should "correctly receive a card" in {
