@@ -5,8 +5,9 @@ import gamedata.DeckOfCards.{Card, Deck, Rank}
 import java.util.UUID
 
 
-
-class GoFish(nPlayers: Int, players: Map[UUID, PlayerData], deck: Deck) {
+// generic model of a gamestate
+// deck is optional because from the perspective of the players, they don't know what the deck is
+case class GoFish(players: Map[UUID, PlayerData], deck: Option[Deck]) {
   // represents a game of go fish
   def getPlayerName(uuid: UUID): Option[String] = {
     players.get(uuid) match {
@@ -35,7 +36,7 @@ class GoFish(nPlayers: Int, players: Map[UUID, PlayerData], deck: Deck) {
   def printPlayers: Unit = {
     players.values.foreach(x=>println(x.summary))
   }
-  def shuffle = new GoFish(nPlayers, players, deck.shuffle())
+  def shuffle = this.copy(deck=deck.map(x=>x.shuffle()))
   def dealToAll(numCards: Int): Option[GoFish] = {
     val totalCards = numCards*nPlayers
     if(totalCards > deck.size){

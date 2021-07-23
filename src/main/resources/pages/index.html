@@ -322,18 +322,18 @@
             showError: false,
             errorMessage: "",
             eventLog: [],
-            users:[],
-            user: {
-                // uuid representing the current user
-                id: "",
-                // name of the current user
-                name: localStorage.getItem("name"),
-                hand: [],
-                points: [],
-                ranks: []
-            },
             // uuid of the player whose turn it is
-            turn: ""
+            thisUserUUID: "",
+            gamestate: {
+                // list of user like {
+                // uuid, name, points, ranks, hand
+                // }
+                // where only thisuser has a hand value
+                //
+                // the player whose turn it currently is
+                turn: -1,
+                users: []
+            }
         },
         methods: {
             showCreate: function () {
@@ -357,7 +357,7 @@
             },
             doJoin: function () {
                 var ref = this;
-                localStorage.setItem("roomId", this.roomId);
+                // save the name to the browser session so that if we come back to the site we don't ahve to retype our name
                 localStorage.setItem("name", this.user.name);
                 var protocol = "ws";
                 if (window.location.protocol.includes('s')) {
@@ -370,12 +370,13 @@
                     if (message.messageType === 'init') {
                         // join ourselves to the game
                         ref.user.id = message.userId
-                        ref.user.hand = message.hand
+                        ref.user.hand = message.dict.hand
+                        ref.turn = message.dict.turn
                         ref.users.push({
                             id: message.userId,
-                            name: message.name,
-                            points: message.points,
-                            ranks: message.ranks
+                            name: message.dict.get("name"),
+                            points: message.dict.get("points"),
+                            ranks: message.dict.get("ranks")
                         });
                     }
                     if (message.messageType === 'join') {
@@ -383,9 +384,9 @@
                         if (message.userId !== ref.user.id) {
                             ref.users.push({
                                 id: message.userId,
-                                name: message.extra.name,
-                                points: message.extra.points,
-                                ranks: message.extra.ranks
+                                name: message.dict.get("name"),
+                                points: message.dict.get("points"),
+                                ranks: message.dict.get("ranks")
                             });
                         }
                     }

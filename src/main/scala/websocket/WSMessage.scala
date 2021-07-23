@@ -7,7 +7,7 @@ import play.api.libs.json._
 import java.util.UUID
 import scala.util.{Failure, Success, Try}
 
-final case class WSMessage(messageType: MessageType, roomId: UUID, userId: UUID, data: Map[String, String])
+final case class WSMessage(messageType: MessageType, roomId: UUID, userId: UUID, dict: Map[String, String])
 
 object WSMessage {
 
