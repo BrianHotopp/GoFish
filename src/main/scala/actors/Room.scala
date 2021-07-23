@@ -34,6 +34,8 @@ object Room {
   }
 
   private[actors] def setupNewUser(player: PlayerData, roomId: UUID, data: RoomData): Unit = {
+    // broadcasts to the vue client that it should add a new user to its room's list of users
+    // and also set its personal "user" to the uuid of the new player
     player.ref ! WSMessage(MessageType.Init, roomId, player.id, player.name)
 
     data.players.foreach { u =>
@@ -44,20 +46,17 @@ object Room {
     Behaviors.receive(
       (context: ActorContext[Room.Command], command: Room.Command) => {
         command match {
-          case Join(playerId) =>
-            context.log.info(s"Room ${context.self.toString} received Join Message with playerId: $playerId")
-            roomBehavior(data.addPlayer(playerId))
-          case Leave(playerId, replyTo) =>
-            context.log.info(s"Room ${context.self.toString} received Leave Message with playerId: $playerId")
-            roomBehavior(data.deletePlayer(playerId))
-          case AskForRank(askerId, askeeId, rank) =>
-            context.log.info(s"Room ${context.self.toString} received AskForRank Message with player $askerId asking $askeeId for ${rank.toString}")
-            val newData = data.Ask
-            roomBehavior()
-          case GetGameState(askerId) =>
-            Behaviors.same
+
         }
       }
     )
+  }
+
+  def broadcast(message: WSMessage, users: List[PlayerData], context: ActorContext[Command]): Unit ={
+    // send WSmessage to the session actor of al lthe players in the passed in list
+    users.foreach(
+      user=>user.ref ! message
+    )
+
   }
 }

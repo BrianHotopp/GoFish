@@ -1,13 +1,13 @@
 package websocket
 
+import gamedata.DeckOfCards.{Card, Deck, Rank}
 import websocket.WSMessage.MessageType
-
 import play.api.libs.json._
+
 import java.util.UUID
 import scala.util.{Failure, Success, Try}
 
-}
-final case class WSMessage(messageType: MessageType, roomId: UUID, userId: UUID, extra: String)
+final case class WSMessage(messageType: MessageType, roomId: UUID, userId: UUID, data: Map[String, String])
 
 object WSMessage {
 
@@ -24,9 +24,6 @@ object WSMessage {
         case Join.stringRep      => Join
         case Leave.stringRep     => Leave
         case Vote.stringRep      => Vote
-        case Show.stringRep      => Show
-        case Clear.stringRep     => Clear
-        case EditIssue.stringRep => EditIssue
         case _ => throw new IllegalArgumentException(s"$messageType is not a valid MessageType")
       }
 
@@ -36,9 +33,7 @@ object WSMessage {
         case Join      => Option(Join.stringRep)
         case Leave     => Option(Leave.stringRep)
         case Vote      => Option(Vote.stringRep)
-        case Show      => Option(Show.stringRep)
-        case Clear     => Option(Clear.stringRep)
-        case EditIssue => Option(EditIssue.stringRep)
+
       }
 
     final case object Init extends MessageType {
@@ -54,19 +49,7 @@ object WSMessage {
     }
 
     final case object Vote extends MessageType {
-      override val stringRep: String = "vote"
-    }
-
-    final case object Show extends MessageType {
-      override val stringRep: String = "show"
-    }
-
-    final case object Clear extends MessageType {
-      override val stringRep: String = "clear"
-    }
-
-    final case object EditIssue extends MessageType {
-      override val stringRep: String = "edit_issue"
+      override val stringRep: String = "ask"
     }
 
     implicit val messageTypeFormat: Format[MessageType] = Format[MessageType](

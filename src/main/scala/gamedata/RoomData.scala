@@ -6,7 +6,7 @@ import java.util.UUID
 
 
 final case class RoomData(players: List[PlayerData], count: Int, deck: Deck){
-  def addPlayer(playerToAdd: PlayerData): RoomData = {
+  def addPlayer(playerToAdd: UUID): RoomData = {
     this.copy(players =playerToAdd :: players, count=count+1)
   }
   def deletePlayer(player: UUID): RoomData = {

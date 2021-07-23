@@ -12,6 +12,7 @@ import websocket.WSMessage.MessageType
 import java.util.UUID
 
 object WS {
+  // websocket stream object
 
   val disabledBufferSize = 0
 
