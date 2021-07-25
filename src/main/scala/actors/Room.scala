@@ -2,10 +2,10 @@ package actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import gamedata.DeckOfCards.{Deck, Rank}
-import gamedata.PlayerData
+import gamedata.{GoFish, PlayerData, RoomData}
 import websocket.WSMessage
-import websocket.WSMessage.MessageType
-import gamedata.RoomData
+import websocket.WSMessage.WSMessageType
+
 import java.util.UUID
 
 object Room {
@@ -22,6 +22,16 @@ object Room {
   def apply(): Behavior[Room.Command] ={
     roomBehavior(RoomData.initial)
   }
+  private[actors] def pushState(
+                               game_state: GoFish,
+                               context: ActorContext[Command]
+                               ): Unit ={
+    // sends a masked version of the gamestate to each player in the passed in gamestate
+    val users = game_state.players
+    users.foreach(
+      // mask the things the user is not allowed to see
+    )
+  }
   private[actors] def broadcast(
                                  message: WSMessage,
                                  users: List[PlayerData],
@@ -36,10 +46,10 @@ object Room {
   private[actors] def setupNewUser(player: PlayerData, roomId: UUID, data: RoomData): Unit = {
     // broadcasts to the vue client that it should add a new user to its room's list of users
     // and also set its personal "user" to the uuid of the new player
-    player.ref ! WSMessage(MessageType.Init, roomId, player.id, player.name)
+    player.ref ! WSMessage(WSMessageType.Init, roomId, player.id, player.name)
 
     data.players.foreach { u =>
-      player.ref ! WSMessage(MessageType.Join, roomId, u.id, u.name)
+      player.ref ! WSMessage(WSMessageType.Join, roomId, u.id, u.name)
     }
   }
   def roomBehavior(data: RoomData): Behavior[Room.Command] ={

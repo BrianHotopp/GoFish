@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import play.api.libs.json.Json
-import websocket.WSMessage.MessageType
+import websocket.WSMessage.WSMessageType
 
 import java.util.UUID
 
@@ -51,7 +51,7 @@ object WS {
       )
       .mapMaterializedValue { user =>
         roomManager ! RoomManager.ConnectToRoom(
-          WSMessage(MessageType.Join, roomId, userId, name),
+          WSMessage(WSMessageType.Join, roomId, userId),
           user
         )
         user

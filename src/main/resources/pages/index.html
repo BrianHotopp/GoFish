@@ -368,16 +368,7 @@
                     ref.inRoom = true;
                     var message = JSON.parse(event.data);
                     if (message.messageType === 'init') {
-                        // join ourselves to the game
-                        ref.user.id = message.userId
-                        ref.user.hand = message.dict.hand
-                        ref.turn = message.dict.turn
-                        ref.users.push({
-                            id: message.userId,
-                            name: message.dict.get("name"),
-                            points: message.dict.get("points"),
-                            ranks: message.dict.get("ranks")
-                        });
+                        }
                     }
                     if (message.messageType === 'join') {
                         // join another user to our game

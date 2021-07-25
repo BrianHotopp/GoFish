@@ -4,7 +4,7 @@ import gamedata.DeckOfCards.{Card, Deck, Rank}
 import java.util.UUID
 import akka.actor.{ActorRef => UntypedRef}
 // hand is optional because for some players that will be in a gamestate, their hands will be unknown from the perspective of other players
-case class PlayerData(id: UUID, ref: UntypedRef, name: String, hand: Option[Deck], points: Int, ranks: List[Rank]) {
+case class PlayerData(id: UUID, ref: Option[UntypedRef], name: String, hand: Option[Deck], points: Int, ranks: List[Rank]) {
   def giveCard(card: Card): PlayerData = {
     this.copy(hand = hand.map(x=>x.addToTop(card)))
   }
