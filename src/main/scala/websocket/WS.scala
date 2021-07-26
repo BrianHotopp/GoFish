@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import play.api.libs.json.Json
-import websocket.WSMessage.WSMessageType
+import websocket.WSMessage.{UserJoin, WSMessageType}
 
 import java.util.UUID
 
@@ -17,6 +17,7 @@ object WS {
   val disabledBufferSize = 0
 
   def handler(roomId: UUID, name: String, roomManager: ActorRef): Flow[Message, Message, Any] = {
+    // takes a name because we want to get the name when we materialize the flow later
     val userId = UUID.randomUUID()
     Flow.fromSinkAndSource[Message, Message](
       sink(roomManager, roomId, userId),
@@ -32,6 +33,8 @@ object WS {
         failure => RoomManager.WSFailure(failure)
       )
       .contramap {
+            // if we get a message, convert it to a WSMessage through some json parting
+            // todo figure out the format of the websocket message by playing with json.parse
         case TextMessage.Strict(body) => RoomManager.IncomeWSMessage(Json.parse(body).as[WSMessage])
         case _                        => RoomManager.UnsupportedWSMessage
       }
@@ -49,9 +52,11 @@ object WS {
         disabledBufferSize,
         OverflowStrategy.dropTail
       )
+      // this is what is called when a user connects and has a session
       .mapMaterializedValue { user =>
+        // send userjoin message to room manager
         roomManager ! RoomManager.ConnectToRoom(
-          WSMessage(WSMessageType.Join, roomId, userId),
+          WSMessage(WSMessageType.Join, roomId, userId, UserJoin(name)),
           user
         )
         user

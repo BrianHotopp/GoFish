@@ -31,7 +31,7 @@ object RoomManager {
 
 
   def apply(): Behavior[RoomManager.Command] = roomManagerBehavior(RoomManagerData.empty)
-  def roomManagerBehavior(roomData: RoomManagerData): Behavior[RoomManager.Command] =
+  def roomManagerBehavior(roomData: RoomManagerData): Behavior[RoomManager.Command] = {
     Behaviors.receive(
       onMessage = (context: ActorContext[RoomManager.Command], command: RoomManager.Command) => {
         command match {
@@ -41,18 +41,28 @@ object RoomManager {
             val roomHandle: ActorRef[Room.Command] = context.spawn(Room.roomBehavior(RoomData.), newUuid.toString)
             replyTo ! RoomId(newUuid.toString)
             roomManagerBehavior(roomData.addRoom(newUuid, roomHandle))
-          case DeleteRoom(roomId) =>
-            context.log.info(s"Room Manager Received Delete Room UUID: $roomId")
-            // get the reference to the room we want to stop from the manager's map of UUID->Refs
-            val stopRef = roomData.rooms.get(roomId)
-            stopRef match {
-              case Some(ref) =>
-                context.stop(ref: ActorRef[Room.Command])
-              case None =>
-                context.log.info(s"Received command to stop actor with uuid $roomId but roomData does not contain an entry with that Id; room could not be halted")
+          case ConnectToRoom(message, user) =>
+            context.log.info("Room Manager Received Connect To Room")
+            val newUuid = UUID.randomUUID()
+            roomData.rooms.get(message.roomId).fold{
+              val roomActor = createRoom(message.roomId, context)
+              context.watch(roomActor)
+              val newData = roomData.addRoom(message.roomId, roomActor)
+              roomActor ! Room.Join(
+              )
             }
+          case IncomeWSMessage()
+
             roomManagerBehavior(roomData.removeRoom(roomId))
         }
       }
     )
+  }
+  private[actors] def handleIncomingMessage(room: ActorRef[Room.Command], message: WSMessage, context: ActorContext[Command]) : Unit = {
+    message.messageType match {
+      case WSMessage.WSMessageType.Join =>
+      case WSMessage.WSMessageType.Ask =>
+      case WSMessage.WSMessageType.Leave =>
+    }
+  }
 }

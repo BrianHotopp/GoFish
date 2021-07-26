@@ -10,7 +10,7 @@ import java.util.UUID
 
 object Room {
   sealed trait Command
-  final case class Join(playerId: UUID) extends Command
+  final case class Join(user: PlayerData) extends Command
   final case class Leave(playerId: UUID, replyTo: ActorRef[Response]) extends Command
   final case class AskForRank(askerId: UUID, askeeId: UUID, rank: Rank) extends Command
   final case class GetGameState(askerId: UUID)

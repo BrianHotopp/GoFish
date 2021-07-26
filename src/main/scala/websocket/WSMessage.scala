@@ -12,9 +12,9 @@ import scala.util.{Failure, Success, Try}
 final case class WSMessage(messageType: WSMessageType, roomId: UUID, userId: UUID, payload: WSMessageData)
 object WSMessage {
   sealed trait WSMessageData
-  case class userJoin(name: String) extends WSMessageData
-  case class pushState(gameState: GoFish) extends WSMessageData
-  case class ask(askeeId: UUID, rank: Rank) extends WSMessageData
+  case class UserJoin(name: String) extends WSMessageData
+  case class PushState(gameState: GoFish) extends WSMessageData
+  case class Ask(askeeId: UUID, rank: Rank) extends WSMessageData
 
   val NoExtra = ""
 
