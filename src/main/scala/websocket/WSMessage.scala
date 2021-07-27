@@ -1,11 +1,9 @@
 package websocket
 
 import gamedata.DeckOfCards.{Card, Deck, Rank}
-import gamedata.GoFish
-import websocket.WSMessage.{
-WSMessageType, WSMessageData
-}
-import play.api.libs.json._
+import gamedata.{GoFish, PlayerData}
+import websocket.WSMessage.{WSMessageData, WSMessageType}
+import play.api.libs.json.{JsValue, _}
 
 import java.util.UUID
 import scala.util.{Failure, Success, Try}
@@ -28,6 +26,8 @@ object WSMessage {
         case Init.stringRep      => Init
         case Join.stringRep      => Join
         case Leave.stringRep     => Leave
+        case PushState.stringRep => PushState
+        case Ask.stringRep => Ask
         case Vote.stringRep      => Vote
         case _ => throw new IllegalArgumentException(s"$messageType is not a valid MessageType")
       }
@@ -37,6 +37,8 @@ object WSMessage {
         case Init      => Option(Init.stringRep)
         case Join      => Option(Join.stringRep)
         case Leave     => Option(Leave.stringRep)
+        case PushState => Option(PushState.stringRep)
+        case Ask => Option(Ask.stringRep)
         case Vote      => Option(Vote.stringRep)
 
       }
@@ -51,6 +53,13 @@ object WSMessage {
 
     final case object Leave extends WSMessageType {
       override val stringRep: String = "leave"
+    }
+    final case object PushState extends WSMessageType {
+      override val stringRep: String = "push"
+    }
+
+    final case object Ask extends WSMessageType {
+      override val stringRep: String = "ask"
     }
 
     final case object Vote extends WSMessageType {
@@ -71,6 +80,12 @@ object WSMessage {
       }
     )
   }
+  implicit val mesageDataFormat: Format[WSMessageData] = Json.format[WSMessageData]
+  implicit val userJoinFormat: Format[UserJoin] = Json.format[UserJoin]
+  implicit val pushStateFormat: Format[PushState] = Json.format[PushState]
+  implicit val askFormat: Format[Ask] = Json.format[Ask]
+  implicit val goFishFormat: Format[GoFish] = Json.format[GoFish]
+  implicit val playerDataFormat: Format[PlayerData] = Json.format[PlayerData]
 
   implicit val wsMessageFormat: Format[WSMessage] = Json.format[WSMessage]
 }

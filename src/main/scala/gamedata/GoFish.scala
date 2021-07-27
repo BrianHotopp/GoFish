@@ -7,7 +7,7 @@ import java.util.UUID
 
 // generic model of a gamestate
 // deck is optional because from the perspective of the players, they don't know what the deck is
-case class GoFish(players: List[PlayerData], deck: Option[Deck]) {
+case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
   def deckSize: Int = deck.size
   def gameOver: Boolean = players.map(x => x.getScore).sum == 13
   def playerHas(uuid: UUID, card: Card): Boolean ={
@@ -18,6 +18,28 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck]) {
   }
   def printPlayers(): Unit = {
     players.foreach(x=>println(x.summary))
+  }
+  def addPlayer(player: PlayerData): GoFish = {
+    if(players.size == 0){
+      // if this is the first player to be added to the game, set the turn
+      this.copy(players = player::players, turn=player.id)
+    }else{
+      this.copy(players = player::players)
+    }
+
+  }
+  def removePlayerById(playerId: UUID): GoFish = {
+    val (toRemove, toRemain) = this.players.partition(x=>x.id == playerId)
+    val removalIndex = players.indexWhere(_.id == playerId)
+    val turnIndex = players.indexWhere(_.id == turn)
+    if(turnIndex > removalIndex){
+      // if the player whose turn it is lies to the right of the player who is leaving, we must bump the turn up by one
+      // mod toRemain.size should be irrelevant; it's just there to explicitly bound the index
+      val newTurn = players((turnIndex + 1) % toRemain.size).id
+      this.copy(players = toRemain, deck = Option(this.deck.get.addDeck(toRemove.head.hand.get)), turn = newTurn).shuffle
+    }else{
+      this.copy(players = toRemain, deck = Option(this.deck.get.addDeck(toRemove.head.hand.get))).shuffle
+    }
   }
   def shuffle: GoFish = this.copy(deck=deck.map(x=>x.shuffle()))
   def dealToAll(numCards: Int): Option[GoFish] = {
@@ -45,7 +67,7 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck]) {
       Some(this.copy(players = newPlayers, deck = Some(Deck(newDeck))))
     }
   }
-  def drawFromDeck(drawerId: UUID): Either[String, (GoFish, Boolean)] = {
+  def drawFromDeck(drawerId: UUID): GoFish = {
     players.find(x=>x.id == drawerId) match {
       case Some(drawer) => {
         // players who are not the drawer
@@ -60,16 +82,21 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck]) {
             val newPlayer: PlayerData = drawer.giveCard(x)
             val newDeck: Deck = y
             val needed = drawer.hasCardWithRank(x.rank)
-            Right((this.copy(players = newPlayer::otherPlayers, deck=Some(newDeck)), needed))
+            this.copy(players = newPlayer::otherPlayers, deck=Some(newDeck))
           }
-          case (None, _) => Left("Can't draw; deck is empty!")
+          case (None, _) => this
         }
       }
-      case None => Left("Invalid gamedata.Player!")
+      case None => this
     }
   }
-
-  def askForCard(wantedRank: Rank, askerId: UUID, askeeId: UUID): Either[String, (GoFish, Boolean)] = {
+  def incrementTurn(): GoFish = {
+    // returns the current game state but with the turn incremented
+    val turnIndex = players.indexWhere(_.id == turn)
+    val newTurn = players((turnIndex + 1) % players.size).id
+    this.copy(turn=newTurn)
+  }
+  def askForCard(wantedRank: Rank, askerId: UUID, askeeId: UUID): GoFish = {
     (players.find(x=>x.id == askerId), players.find(x=>x.id == askeeId)) match {
       case (Some(asker), Some(askee)) => {
         (asker.hasCardWithRank(wantedRank), askee.hasCardWithRank(wantedRank)) match {
@@ -81,15 +108,15 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck]) {
             val uninvolvedPlayers = players.filter(x => (x.id != askerId) && (x.id != askeeId))
             val newAsker = asker.giveCards(haul)
             val newGameState = this.copy(players = newAskee :: newAsker :: uninvolvedPlayers)
-            Right((newGameState, true))
+            newGameState
           }
-          case (true, false) => Right((this, false))
-          case (false, _) => Left("You must have at least one card of the rank you are asking for!")
+          case _ => {
+            // compute new turn
+            this.incrementTurn()
+          }
         }
       }
-      case (Some(_), None) => Left(s"Cannot find id ${askerId} to take cards from!")
-      case (None, Some(_)) => Left(s"Cannot find id ${askeeId} to give cards to!")
-      case (None, None) => Left(s"Cannot find asker id ${askerId} nor askee id ${askeeId}")
+      case _ => this
     }
   }
   def makeGroups: (GoFish, Map[UUID, List[Rank]]) = {

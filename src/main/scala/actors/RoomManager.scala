@@ -1,11 +1,12 @@
 package actors
+import actors.Room.{AskForRank, Leave}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import websocket.WSMessage
 import akka.actor.{ActorRef => UntypedRef}
-import gamedata.DeckOfCards.Deck
-import gamedata.{GoFish, PlayerData, RoomData, RoomManagerData}
-import websocket.WSMessage.UserJoin
+import gamedata.DeckOfCards.{Deck, Spade, Two}
+import gamedata.{GoFish, PlayerData, RoomManagerData}
+import websocket.WSMessage.{Ask, UserJoin}
 
 import java.util.UUID
 object RoomManager {
@@ -66,18 +67,16 @@ object RoomManager {
               // now we must make a user to add to the room we just made, we have the ref
               // passed in by the message from the client, but we must make a new uuid and create the player
               // we also need the name passed in in the wsmessage from the user
-              message.payload match {
-                case UserJoin(name) =>
-                  // create new user with name from wsmessage, ref from connecttoroom (from our backend session creation in wsmessage), and random uuid
-                  val newUser = PlayerData(UUID.randomUUID(), Some(userRef), name, Some(Deck()), 0, List())
-                  roomActor ! Room.Join(newUser)
-                  // deal to the user
-                  // broadcast the new state to all other users
-                roomManagerBehavior(roomManagerData, roomResponderActor)
+              val name = message.payload match {
+                case UserJoin(name) => name
                 case _ =>
                   context.log.error("ERROR: got something other than UserJoin payload in a WSMessage part of a command of type Join")
-                  roomManagerBehavior(roomManagerData, roomResponderActor)
+                  "INVALID_USERNAME"
               }
+              // create new user with name from wsmessage, ref from connecttoroom (from our backend session creation in wsmessage), and random uuid
+              val newUser = PlayerData(UUID.randomUUID(), Some(userRef), name, Some(Deck()), 0, List())
+              roomActor ! Room.Join(newUser)
+              roomManagerBehavior(roomManagerData, roomResponderActor)
             }{
               roomActor =>
                 val newRoomManagerData = roomManagerData.addRoom(message.roomId, roomActor)
@@ -86,10 +85,6 @@ object RoomManager {
                   // create new user with name from wsmessage, ref from connecttoroom (from our backend session creation in wsmessage), and random uuid
                   val newUser = PlayerData(UUID.randomUUID(), Some(userRef), name, Some(Deck()), 0, List())
                   roomActor ! Room.Join(newUser)
-                // deal to the user
-
-                // broadcast the new state to all other users
-                // return behavior with new roomManagerData
                 roomManagerBehavior(newRoomManagerData, roomResponderActor)
                 case _ =>
                   context.log.error("ERROR: got something other than UserJoin payload in a WSMessage part of a command of type Join")
@@ -99,24 +94,35 @@ object RoomManager {
           case IncomeWSMessage(message) =>
             // todo handle exception
             val room = roomManagerData.rooms(message.roomId)
-            handleIncomingMessage(room, message, context)
+            handleIncomingMessage(room, message, context, roomResponderActor)
+            roomManagerBehavior(roomManagerData, roomResponderActor)
         }
       }
     )
   }
-  private[actors] def createRoomRef(
+  def createRoomRef(
                                 roomId: UUID,
                                 context: ActorContext[Command]
                                 ): ActorRef[Room.Command] = {
     // gives back a room in the current context with a name corresponding to the passed in UUID
-    context.spawn(actors.Room(), roomId.toString)
+    context.spawn(actors.Room(roomId), roomId.toString)
   }
-  private[actors] def handleIncomingMessage(room: ActorRef[Room.Command], message: WSMessage, context: ActorContext[Command]) : Unit = {
+  def handleIncomingMessage(room: ActorRef[Room.Command], message: WSMessage, context: ActorContext[Command], roomManagerRefToReplyTo: ActorRef[Room.Response]) : Unit = {
+    // room is a reference to the room which will handle the message, message is the message, context is a handle to the roomManager
     message.messageType match {
       case WSMessage.WSMessageType.Join =>
-       // should not be used
+       // should not be used because it can only come from materializing the user session on the backend
+      Unit
       case WSMessage.WSMessageType.Ask =>
+        // unpack message payload
+        val payload = message.payload match {
+          case a: Ask => a
+          case _ => Ask(UUID.randomUUID(), Two)
+        }
+        room ! AskForRank(message.userId, payload.askeeId, payload.rank)
       case WSMessage.WSMessageType.Leave =>
+        // need to get userid and
+        room ! Leave(message.roomId, roomManagerRefToReplyTo)
     }
   }
 }

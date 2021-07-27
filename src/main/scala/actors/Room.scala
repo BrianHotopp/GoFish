@@ -2,12 +2,11 @@ package actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import gamedata.DeckOfCards.{Deck, Rank}
-import gamedata.{GoFish, PlayerData, RoomData}
+import gamedata.{GoFish, PlayerData}
 import websocket.WSMessage
-import websocket.WSMessage.WSMessageType
+import websocket.WSMessage.{PushState, WSMessageType}
 
 import java.util.UUID
-import akka.actor.ActorRef
 
 import scala.::
 object Room {
@@ -15,51 +14,49 @@ object Room {
   final case class Join(player: PlayerData) extends Command
   final case class Leave(playerId: UUID, replyTo: ActorRef[Response]) extends Command
   final case class AskForRank(askerId: UUID, askeeId: UUID, rank: Rank) extends Command
-  final case class GetGameState(askerId: UUID)
   sealed trait Response
   final case class Running(roomId: UUID) extends Response
   final case class Stopped(roomId: UUID) extends Response
 
+  case class RoomData(roomId: UUID, gameData: GoFish)
 
-  def apply(): Behavior[Room.Command] ={
+  def apply(uuid: UUID): Behavior[Room.Command] ={
     Behaviors.setup[Command] {
       _ =>
-        roomBehavior(GoFish(List(), Some(Deck())))
+        roomBehavior(RoomData(uuid, GoFish(List(), Some(Deck()), turn = UUID.randomUUID())))
     }
   }
-  private[actors] def pushState(
-                               game_state: GoFish,
-                               context: ActorContext[Command]
-                               ): Unit ={
-    // sends a masked version of the gamestate to each player in the passed in gamestate
-    val users = game_state.players
-    users.foreach(
-      // mask the things the user is not allowed to see
 
-    )
-  }
-
-
-
-  def roomBehavior(data: GoFish): Behavior[Room.Command] ={
-    Behaviors.receive(
-      (context: ActorContext[Room.Command], command: Room.Command) => {
+  def roomBehavior(data: RoomData): Behavior[Room.Command] ={
+    Behaviors.receive[Command](
+      (context, command) => {
         command match {
           case Join(user) =>
-            // adds the passed in user to the room's data
-            roomBehavior(data.copy(players = user :: data.players))
-          case Leave(userId, roomToReplyTo) =>
-            val newData = data.removePlayer(userId)
+            // add the passed in user to the game data
+            // broadcast the new state to all users in the room
+            val newGameData =  data.gameData.copy(players = user::data.gameData.players)
+            val newRoomData = data.copy(gameData = newGameData)
+            pushState(newRoomData)
+            roomBehavior(newRoomData)
+          case AskForRank(askerId, askeeId, rank) =>
+            val newGameData = data.gameData.askForCard(rank, askerId, askeeId)
+            val newRoomData = data.copy(gameData = newGameData)
+            pushState(newRoomData)
+            Behaviors.same
+          case Leave(userId, roomRefToReplyTo) =>
+            val newGameData = data.gameData.removePlayerById(userId)
+            val newRoomData = data.copy(gameData = newGameData)
             // broadcast the leave to all players in the room
+            pushState(newRoomData)
             // if this leave made the game data have no players
             // send a stopped message to the RoomManager and do Behaviors.Stopped
             // else
-            if (newData.users.isEmpty) {
-              replyTo ! Stopped(roomId)
+            if (newGameData.players.isEmpty) {
+              roomRefToReplyTo ! Stopped(data.roomId)
               Behaviors.stopped
             } else {
-              replyTo ! Running(roomId)
-              receiveBehaviour(roomId, newData)
+              roomRefToReplyTo ! Running(data.roomId)
+              roomBehavior(newRoomData)
             }
         }
 
@@ -67,10 +64,18 @@ object Room {
     )
   }
 
-  def broadcast(message: WSMessage, users: List[PlayerData], context: ActorContext[Command]): Unit ={
+  def pushState(roomData: RoomData):  Unit ={
     // send WSmessage to the session actor of al lthe players in the passed in list
+    val state = roomData.gameData
+    val users = state.players
     users.foreach(
-      user=>user.ref ! message
+      user => {
+        val maskedState = state.mask(user.id)
+        // todo handle the fact that this can err
+        user.ref.get ! WSMessage(WSMessageType.PushState, roomData.roomId, user.id, PushState(maskedState))
+      }
+      // make a masked version of the gamestate
+
     )
 
   }
