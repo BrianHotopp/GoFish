@@ -7,7 +7,7 @@ import java.util.UUID
 
 // generic model of a gamestate
 // deck is optional because from the perspective of the players, they don't know what the deck is
-case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
+case class GoFish(players: List[PlayerData], deck: Option[Deck]) {
   def deckSize: Int = deck.size
   def gameOver: Boolean = players.map(x => x.getScore).sum == 13
   def playerHas(uuid: UUID, card: Card): Boolean ={
@@ -108,14 +108,12 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
       player =>
       if(player.id != playerId){
         // inside this block is actions that should be performed for every player that is not the one we are masking for
-        // current player cannot see the hand or reference to other players
         player.copy(ref=None, hand=None)
       }else{
-        // current player cannot see references
         player.copy(ref=None)
       }
     }
-    this.copy(players = newPlayers)
+    this.copy(players = newPlayers, deck = None)
   }
 }
 

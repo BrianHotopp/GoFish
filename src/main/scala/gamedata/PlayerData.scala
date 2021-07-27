@@ -8,9 +8,7 @@ case class PlayerData(id: UUID, ref: Option[UntypedRef], name: String, hand: Opt
   def giveCard(card: Card): PlayerData = {
     this.copy(hand = hand.map(x=>x.addToTop(card)))
   }
-  def giveCards(toGive: Deck): PlayerData ={
-    this.copy(hand=hand.map(x=>x.addDeck(toGive)))
-  }
+  def giveCards(toGive: Deck): PlayerData ={ this.copy(hand=hand.map(x=>x.addDeck(toGive))) }
   def takeCards(p : Card => Boolean): (Option[Deck], PlayerData) = {
     // todo handle the potential exception thrown by get better so this fn cannot throw exception
     val (lost, kept) = hand.map(x=>x.partition(p)).get

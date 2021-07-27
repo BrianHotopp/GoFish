@@ -7,10 +7,12 @@ import websocket.WSMessage
 import websocket.WSMessage.WSMessageType
 
 import java.util.UUID
+import akka.actor.ActorRef
 
+import scala.::
 object Room {
   sealed trait Command
-  final case class Join(user: PlayerData) extends Command
+  final case class Join(player: PlayerData) extends Command
   final case class Leave(playerId: UUID, replyTo: ActorRef[Response]) extends Command
   final case class AskForRank(askerId: UUID, askeeId: UUID, rank: Rank) extends Command
   final case class GetGameState(askerId: UUID)
@@ -20,7 +22,10 @@ object Room {
 
 
   def apply(): Behavior[Room.Command] ={
-    roomBehavior(RoomData.initial)
+    Behaviors.setup[Command] {
+      _ =>
+        roomBehavior(GoFish(List(), Some(Deck())))
+    }
   }
   private[actors] def pushState(
                                game_state: GoFish,
@@ -30,34 +35,34 @@ object Room {
     val users = game_state.players
     users.foreach(
       // mask the things the user is not allowed to see
+
     )
   }
-  private[actors] def broadcast(
-                                 message: WSMessage,
-                                 users: List[PlayerData],
-                                 context: ActorContext[Command]
-                               ): Unit = {
-    context.log.debug("Broadcasting: {} ", message)
-    users.foreach { user =>
-      user.ref ! message
-    }
-  }
 
-  private[actors] def setupNewUser(player: PlayerData, roomId: UUID, data: RoomData): Unit = {
-    // broadcasts to the vue client that it should add a new user to its room's list of users
-    // and also set its personal "user" to the uuid of the new player
-    player.ref ! WSMessage(WSMessageType.Init, roomId, player.id, player.name)
 
-    data.players.foreach { u =>
-      player.ref ! WSMessage(WSMessageType.Join, roomId, u.id, u.name)
-    }
-  }
-  def roomBehavior(data: RoomData): Behavior[Room.Command] ={
+
+  def roomBehavior(data: GoFish): Behavior[Room.Command] ={
     Behaviors.receive(
       (context: ActorContext[Room.Command], command: Room.Command) => {
         command match {
-
+          case Join(user) =>
+            // adds the passed in user to the room's data
+            roomBehavior(data.copy(players = user :: data.players))
+          case Leave(userId, roomToReplyTo) =>
+            val newData = data.removePlayer(userId)
+            // broadcast the leave to all players in the room
+            // if this leave made the game data have no players
+            // send a stopped message to the RoomManager and do Behaviors.Stopped
+            // else
+            if (newData.users.isEmpty) {
+              replyTo ! Stopped(roomId)
+              Behaviors.stopped
+            } else {
+              replyTo ! Running(roomId)
+              receiveBehaviour(roomId, newData)
+            }
         }
+
       }
     )
   }
