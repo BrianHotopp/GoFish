@@ -112,7 +112,6 @@ object RoomManager {
     message.messageType match {
       case WSMessage.WSMessageType.Join =>
        // should not be used because it can only come from materializing the user session on the backend
-      Unit
       case WSMessage.WSMessageType.Ask =>
         // unpack message payload
         val payload = message.payload match {

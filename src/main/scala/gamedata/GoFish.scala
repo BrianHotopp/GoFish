@@ -1,6 +1,7 @@
 package gamedata
 
 import gamedata.DeckOfCards.{Card, Deck, Rank}
+import play.api.libs.json.{Format, Json}
 
 import java.util.UUID
 
@@ -142,6 +143,8 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
     }
     this.copy(players = newPlayers, deck = None)
   }
+}
+object GoFish {
 }
 
 

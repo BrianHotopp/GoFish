@@ -1,8 +1,10 @@
 package gamedata
 
 import gamedata.DeckOfCards.{Card, Deck, Rank}
+
 import java.util.UUID
 import akka.actor.{ActorRef => UntypedRef}
+import play.api.libs.json.{Format, Json}
 // hand is optional because for some players that will be in a gamestate, their hands will be unknown from the perspective of other players
 case class PlayerData(id: UUID, ref: Option[UntypedRef], name: String, hand: Option[Deck], points: Int, ranks: List[Rank]) {
   def giveCard(card: Card): PlayerData = {
@@ -44,4 +46,6 @@ case class PlayerData(id: UUID, ref: Option[UntypedRef], name: String, hand: Opt
   def handSize: Int = hand.size
 
   def getRanks: List[Rank] = ranks
+}
+object PlayerData {
 }

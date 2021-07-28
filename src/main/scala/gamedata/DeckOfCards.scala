@@ -1,9 +1,10 @@
 package gamedata
 
+import play.api.libs.json.{Format, JsArray, Json, Writes}
+
 import scala.util.Random
 
 object DeckOfCards {
-
   //clumsy enumeration definition
   sealed abstract class Suite
 
@@ -16,16 +17,6 @@ object DeckOfCards {
   case object Diamond extends Suite
 
   sealed abstract class Rank
-
-  object Rank {
-    def apply(number: Int): Rank = {
-      if (number < 1 || number > 13) {
-        return Ace
-      } else {
-        return ranks(number - 2)
-      }
-    }
-  }
 
   case object Two extends Rank
 
@@ -59,10 +50,13 @@ object DeckOfCards {
   //the interesting part
   case class Card(rank: Rank, suite: Suite)
 
-  class Deck(pCards: List[Card] = for (r <- ranks; s <- suites) yield Card(r, s)) {
+  object Card {
 
-    val cards: List[Card] = if (isValidDeck(pCards)) pCards
-    else throw new RuntimeException("Deck is invalid!")
+  }
+
+
+
+  case class Deck(cards: List[Card] = for (r <- ranks; s <- suites) yield Card(r, s)) {
 
     def size = cards.size
 
@@ -120,20 +114,6 @@ object DeckOfCards {
   }
 
   object Deck {
-    // copy constructor
-    def apply(deck: Deck): Deck = {
-      new Deck(deck.cards)
-    }
-
-    // constructor from list
-    def apply(base: List[Card]): Deck = {
-      new Deck(base)
-    }
-
-    // empty constructor
-    def apply(): Deck = {
-      new Deck()
-    }
   }
 
 }
