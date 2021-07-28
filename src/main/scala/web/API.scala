@@ -31,7 +31,8 @@ class API(roomManager: ActorRef[RoomManager.Command], apiConfig: ApiConfig)(impl
     concat(
       pathEndOrSingleSlash {
         get {
-          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Hit the API Root</h1>"))
+          log.debug("Index call [{}]", apiConfig.indexPath)
+          getFromFile(apiConfig.indexPath)
         }
       },
       path(JavaUUID) { roomId =>

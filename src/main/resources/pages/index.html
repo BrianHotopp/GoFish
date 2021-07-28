@@ -86,17 +86,8 @@
             <div class="card text-center shadow-sm m-1">
                 <div class="card-header">
                    Go Fish
-                    <ul class="nav nav-tabs card-header-tabs">
-                        <li class="nav-item">
-                            <a class="nav-link" v-bind:class="{active: creating}" href="#" v-on:click="showCreate">Create</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" v-bind:class="{active: joining}" href="#" v-on:click="showJoin">Join</a>
-                        </li>
-                    </ul>
                 </div>
-
-                <div class="card-body" v-if="creating">
+                <div class="card-body">
                     <h5 class="card-title">Create Room</h5>
                     <div class="form-group row">
                         <label class="col-sm-3 col-form-label">User name</label>
