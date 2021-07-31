@@ -6,15 +6,15 @@ import scala.util.Random
 
 object DeckOfCards {
   //clumsy enumeration definition
-  sealed abstract class Suite
+  sealed abstract class Suit
 
-  case object Spade extends Suite
+  case object Spade extends Suit
 
-  case object Heart extends Suite
+  case object Heart extends Suit
 
-  case object Club extends Suite
+  case object Club extends Suit
 
-  case object Diamond extends Suite
+  case object Diamond extends Suit
 
   sealed abstract class Rank
 
@@ -44,11 +44,11 @@ object DeckOfCards {
 
   case object Ace extends Rank
 
-  val suites = Set(Spade, Heart, Club, Diamond)
+  val Suits = Set(Spade, Heart, Club, Diamond)
   val ranks = List(Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace)
 
   //the interesting part
-  case class Card(rank: Rank, suite: Suite)
+  case class Card(rank: Rank, Suit: Suit)
 
   object Card {
 
@@ -115,7 +115,7 @@ object DeckOfCards {
 
   object Deck {
     // 52 card standard deck
-    val defaultDeck = Deck(for (r <- ranks; s <- suites) yield Card(r, s))
+    val defaultDeck = Deck(for (r <- ranks; s <- Suits) yield Card(r, s))
     val emptyDeck = Deck(List())
   }
 

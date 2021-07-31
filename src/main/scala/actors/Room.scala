@@ -4,8 +4,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import gamedata.DeckOfCards.Deck.defaultDeck
 import gamedata.DeckOfCards.{Deck, Rank}
 import gamedata.{GoFish, PlayerData}
-import websocket.WSMessage
-import websocket.WSMessage.{PushState, WSMessageType}
+import websocket.{PushState, WSMessage}
 
 import java.util.UUID
 import scala.::
@@ -72,7 +71,7 @@ object Room {
       user => {
         val maskedState = state.mask(user.id)
         // todo handle the fact that this can err
-        user.ref.get ! WSMessage(WSMessageType.PushState, roomData.roomId, user.id, PushState(maskedState))
+        user.ref.get ! WSMessage(roomData.roomId, user.id, PushState(maskedState))
       }
       // make a masked version of the gamestate
 

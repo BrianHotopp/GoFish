@@ -10,17 +10,13 @@ import java.util.UUID
 // generic model of a gamestate
 // deck is optional because from the perspective of the players, they don't know what the deck is
 case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
-  def deckSize: Int = deck.size
-  def gameOver: Boolean = players.map(x => x.getScore).sum == 13
   def playerHas(uuid: UUID, card: Card): Boolean ={
     players.find(x => x.id == uuid) match {
       case Some(player) => player.hasCard(card)
       case None => false
     }
   }
-  def printPlayers(): Unit = {
-    players.foreach(x=>println(x.summary))
-  }
+
   def addPlayer(player: PlayerData): GoFish = {
     if(players.size == 0){
       // if this is the first player to be added to the game, set the turn
@@ -43,11 +39,12 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
       this.copy(players = toRemain, deck = Option(this.deck.get.addDeck(toRemove.head.hand.get))).shuffle
     }
   }
+
   def shuffle: GoFish = this.copy(deck=deck.map(x=>x.shuffle()))
   def dealToAll(numCards: Int): Option[GoFish] = {
     val nPlayers: Int = players.size
     val totalCards = numCards*nPlayers
-    if(totalCards > deck.size){
+    if(totalCards > deck.getOrElse(emptyDeck).size){
       // can't deal more cards then exist
       None
     }else{
@@ -103,12 +100,9 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
       case (Some(asker), Some(askee)) => {
         (asker.hasCardWithRank(wantedRank), askee.hasCardWithRank(wantedRank)) match {
           case (true, true) => {
-            val (Some(haul), newAskee) = {
-              println(s"wanted rank: $wantedRank")
-              askee.takeCards(x => x.rank == wantedRank)
-            }
+            val (haul, newAskee) = askee.takeCards(x => x.rank == wantedRank)
             val uninvolvedPlayers = players.filter(x => (x.id != askerId) && (x.id != askeeId))
-            val newAsker = asker.giveCards(haul)
+            val newAsker = asker.giveCards(haul.getOrElse(emptyDeck).toList)
             val newGameState = this.copy(players = newAskee :: newAsker :: uninvolvedPlayers)
             newGameState
           }
@@ -144,6 +138,12 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
     }
     this.copy(players = newPlayers, deck = None)
   }
+
+  def printPlayers(): Unit = {
+    players.foreach(x=>println(x.summary))
+  }
+  def deckSize: Int = deck.size
+  def gameOver: Boolean = players.map(x => x.points).sum == 13
 }
 object GoFish {
   val goFishNoRefsPreDeal = {
@@ -153,11 +153,9 @@ object GoFish {
     val player4 = PlayerData(UUID.randomUUID(), None, "player4", Some(emptyDeck), 0, List())
     GoFish(List(player1, player2, player3, player4), Some(defaultDeck), player1.id)
   }
-  val goFishNoRefs = {
+  val goFishNoRefsPostDeal = {
     goFishNoRefsPreDeal.dealToAll(7).get
   }
-
-
 }
 
 

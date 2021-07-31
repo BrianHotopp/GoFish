@@ -7,8 +7,6 @@ import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.{CompletionStrategy, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import play.api.libs.json.Json
-import websocket.WSMessage.{UserJoin, WSMessageType}
-
 import java.util.UUID
 
 object WS {
@@ -53,13 +51,13 @@ object WS {
         OverflowStrategy.dropTail
       )
       // this is what is called when a user connects and has a session
-      .mapMaterializedValue { user =>
+      .mapMaterializedValue { userRef =>
         // send userjoin message to room manager
         roomManager ! RoomManager.ConnectToRoom(
-          WSMessage(WSMessageType.Join, roomId, userId, UserJoin(name)),
-          user
+          WSMessage(roomId, userId, UserJoin(name)),
+          userRef
         )
-        user
+        userRef
       }
       .map(message => TextMessage(Json.toJson(message).toString()))
 
