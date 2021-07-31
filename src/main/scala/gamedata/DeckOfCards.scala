@@ -56,7 +56,7 @@ object DeckOfCards {
 
 
 
-  case class Deck(cards: List[Card] = for (r <- ranks; s <- suites) yield Card(r, s)) {
+  case class Deck(cards: List[Card]) {
 
     def size = cards.size
 
@@ -114,6 +114,9 @@ object DeckOfCards {
   }
 
   object Deck {
+    // 52 card standard deck
+    val defaultDeck = Deck(for (r <- ranks; s <- suites) yield Card(r, s))
+    val emptyDeck = Deck(List())
   }
 
 }

@@ -1,13 +1,13 @@
 package actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import gamedata.DeckOfCards.Deck.defaultDeck
 import gamedata.DeckOfCards.{Deck, Rank}
 import gamedata.{GoFish, PlayerData}
 import websocket.WSMessage
 import websocket.WSMessage.{PushState, WSMessageType}
 
 import java.util.UUID
-
 import scala.::
 object Room {
   sealed trait Command
@@ -23,7 +23,7 @@ object Room {
   def apply(uuid: UUID): Behavior[Room.Command] ={
     Behaviors.setup[Command] {
       _ =>
-        roomBehavior(RoomData(uuid, GoFish(List(), Some(Deck()), turn = UUID.randomUUID())))
+        roomBehavior(RoomData(uuid, GoFish(List(), Some(defaultDeck), turn = UUID.randomUUID())))
     }
   }
 

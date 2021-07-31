@@ -1,5 +1,6 @@
 package gamedata
 
+import gamedata.DeckOfCards.Deck.{defaultDeck, emptyDeck}
 import gamedata.DeckOfCards.{Card, Deck, Rank}
 import play.api.libs.json.{Format, Json}
 
@@ -145,6 +146,18 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
   }
 }
 object GoFish {
+  val goFishNoRefsPreDeal = {
+    val player1 = PlayerData(UUID.randomUUID(), None, "player1", Some(emptyDeck), 0, List())
+    val player2 = PlayerData(UUID.randomUUID(), None, "player2", Some(emptyDeck), 0, List())
+    val player3 = PlayerData(UUID.randomUUID(), None, "player3", Some(emptyDeck), 0, List())
+    val player4 = PlayerData(UUID.randomUUID(), None, "player4", Some(emptyDeck), 0, List())
+    GoFish(List(player1, player2, player3, player4), Some(defaultDeck), player1.id)
+  }
+  val goFishNoRefs = {
+    goFishNoRefsPreDeal.dealToAll(7).get
+  }
+
+
 }
 
 

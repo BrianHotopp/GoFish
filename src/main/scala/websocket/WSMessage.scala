@@ -18,6 +18,7 @@ object WSMessage {
 
 
   // formatters for json serde
+  implicit val cardFormat : Format[Card] = Json.format[Card]
   implicit val mesageDataFormat: Format[WSMessageData] = Json.format[WSMessageData]
   implicit val userJoinFormat: Format[UserJoin] = Json.format[UserJoin]
   implicit val pushStateFormat: Format[PushState] = Json.format[PushState]
@@ -27,7 +28,6 @@ object WSMessage {
   implicit val playerDataFormat: Format[PlayerData] = Json.format[PlayerData]
   implicit val deckFormat : Format[Deck] = Json.format[Deck]
   implicit val goFishFormat: Format[GoFish] = Json.format[GoFish]
-  implicit val cardFormat : Format[Card] = Json.format[Card]
   implicit val rankFormat: Format[Rank] = Format[Rank](
     Reads[Rank] {
       case JsString(rankStr) => rankStr match {

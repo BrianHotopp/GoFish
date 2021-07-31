@@ -4,7 +4,8 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import websocket.WSMessage
 import akka.actor.{ActorRef => UntypedRef}
-import gamedata.DeckOfCards.{Deck, Spade, Two}
+import gamedata.DeckOfCards.Deck.{defaultDeck, emptyDeck}
+import gamedata.DeckOfCards.{Deck, Rank, Spade, Two}
 import gamedata.{GoFish, PlayerData, RoomManagerData}
 import websocket.WSMessage.{Ask, UserJoin}
 
@@ -74,18 +75,19 @@ object RoomManager {
                   "INVALID_USERNAME"
               }
               // create new user with name from wsmessage, ref from connecttoroom (from our backend session creation in wsmessage), and random uuid
-              val newUser = PlayerData(UUID.randomUUID(), Some(userRef), name, Some(Deck()), 0, List())
+              val newUser = PlayerData(UUID.randomUUID(), Some(userRef), name, Some(defaultDeck), 0, List())
               roomActor ! Room.Join(newUser)
-              roomManagerBehavior(roomManagerData, roomResponderActor)
+              roomManagerBehavior(newRoomManagerData, roomResponderActor)
             }{
               roomActor =>
                 val newRoomManagerData = roomManagerData.addRoom(message.roomId, roomActor)
               message.payload match {
                 case UserJoin(name) =>
                   // create new user with name from wsmessage, ref from connecttoroom (from our backend session creation in wsmessage), and random uuid
-                  val newUser = PlayerData(UUID.randomUUID(), Some(userRef), name, Some(Deck()), 0, List())
+
+                  val newUser = PlayerData(UUID.randomUUID(), Some(userRef), name, Some(emptyDeck), 0, List())
                   roomActor ! Room.Join(newUser)
-                roomManagerBehavior(newRoomManagerData, roomResponderActor)
+                  roomManagerBehavior(newRoomManagerData, roomResponderActor)
                 case _ =>
                   context.log.error("ERROR: got something other than UserJoin payload in a WSMessage part of a command of type Join")
                   Behaviors.same
