@@ -66,7 +66,7 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
       Some(this.copy(players = newPlayers, deck = Some(Deck(newDeck))))
     }
   }
-  def drawFromDeck(drawerId: UUID): GoFish = {
+  def drawFromDeck(drawerId: UUID): (GoFish, Boolean) = {
     players.find(x=>x.id == drawerId) match {
       case Some(drawer) => {
         // players who are not the drawer
@@ -81,12 +81,12 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
             val newPlayer: PlayerData = drawer.giveCard(x)
             val newDeck: Deck = y
             val needed = drawer.hasCardWithRank(x.rank)
-            this.copy(players = newPlayer::otherPlayers, deck=Some(newDeck))
+            (this.copy(players = newPlayer::otherPlayers, deck=Some(newDeck)), needed)
           }
-          case (None, _) => this
+          case (None, _) => (this, false)
         }
       }
-      case None => this
+      case None => (this, false)
     }
   }
   def incrementTurn(): GoFish = {
@@ -106,9 +106,16 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
             val newGameState = this.copy(players = newAskee :: newAsker :: uninvolvedPlayers)
             newGameState
           }
+          case (true, false) => {
+            val (newGameState, neededCard) = this.drawFromDeck(asker.id)
+            if(!neededCard){
+              newGameState.incrementTurn()
+            }else{
+              newGameState
+            }
+          }
           case _ => {
-            // compute new turn
-            this.incrementTurn()
+            this
           }
         }
       }
