@@ -2,6 +2,7 @@ package websocket
 
 import akka.actor.ActorRef
 import gamedata.DeckOfCards.{Ace, Card, Club, Deck, Diamond, Eight, Five, Four, Heart, Jack, King, Nine, Queen, Rank, Seven, Six, Spade, Suit, Ten, Three, Two}
+import gamedata.GoFish.{Finished, GameStatus, Running, Waiting}
 import gamedata.{GoFish, PlayerData}
 import play.api.libs.json.{JsValue, _}
 
@@ -25,6 +26,10 @@ sealed trait WSMessageData
 case class UserJoin(name: String) extends WSMessageData
 case class PushState(gameState: GoFish) extends WSMessageData
 case class Ask(askeeId: UUID, rank: Rank) extends WSMessageData
+case class DealIn(toDealInId: UUID) extends WSMessageData
+case object Ready extends WSMessageData
+case object Start extends WSMessageData
+
 
 object WSMessage {
   implicit val rankFormat: Format[Rank] = Format[Rank](
@@ -74,6 +79,44 @@ object WSMessage {
       JsString(ref.toString)
     }
   )
+  implicit val gameStatusFormat: Format[GameStatus] = Format[GameStatus](
+    Reads[GameStatus] {
+      case JsString(gameStatusStr) => gameStatusStr match {
+        case "Waiting" => JsSuccess(Waiting)
+        case "Running" => JsSuccess(Running)
+        case "Finished" => JsSuccess(Finished)
+        case _ => JsError("ERROR: Invalid GameStatus String!")
+      }
+      case _ => JsError("Unexpected type")
+    },
+    Writes[GameStatus] { gameStatus =>
+      JsString(gameStatus.toString)
+    }
+  )
+  implicit val startFormat: Format[Start.type] = Format[Start.type](
+    Reads[Start.type] {
+      case JsString(startStr) => startStr match {
+        case "Start" => JsSuccess(Start)
+        case _ => JsError("ERROR: Invalid GameStatus String!")
+      }
+      case _ => JsError("Unexpected type")
+    },
+    Writes[Start.type] { startObj =>
+      JsString(startObj.toString)
+    }
+  )
+  implicit val readyFormat: Format[Ready.type] = Format[Ready.type](
+    Reads[Ready.type] {
+      case JsString(readyStr) => readyStr match {
+        case "Ready" => JsSuccess(Ready)
+        case _ => JsError("ERROR: Invalid GameStatus String!")
+      }
+      case _ => JsError("Unexpected type")
+    },
+    Writes[Ready.type] { readyObj =>
+      JsString(readyObj.toString)
+    }
+  )
   implicit val cardFormat : Format[Card] = Json.format[Card]
   implicit val deckFormat : Format[Deck] = Json.format[Deck]
   implicit val playerDataFormat: Format[PlayerData] = Json.format[PlayerData]
@@ -83,6 +126,7 @@ object WSMessage {
   implicit val userJoinFormat: Format[UserJoin] = Json.format[UserJoin]
   implicit val pushStateFormat: Format[PushState] = Json.format[PushState]
   implicit val askFormat: Format[Ask] = Json.format[Ask]
+  implicit val dealIn: Format[DealIn] = Json.format[DealIn]
   implicit val wsMessageFormat: Format[WSMessage] = Json.format[WSMessage]
 
 

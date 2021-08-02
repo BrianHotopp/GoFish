@@ -1,8 +1,10 @@
 package gamedata
 
+import actors.Room.CARDSPERPLAYER
 import gamedata.DeckOfCards.Deck.{defaultDeck, emptyDeck}
 import gamedata.DeckOfCards.{Card, Deck, Rank}
 import gamedata.GoFish.GameStatus
+import gamedata.PlayerData.{defaultPlayer, defaultPlayerReadied}
 import play.api.libs.json.{Format, Json}
 
 import java.util.UUID
@@ -17,7 +19,7 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: Option[UU
       case None => false
     }
   }
-
+  def allPlayersReady(): Boolean = players.forall(x=>x.readied)
   def addPlayer(player: PlayerData): GoFish = {
     if(players.size == 0){
       // if this is the first player to be added to the game, set the turn
@@ -42,6 +44,15 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: Option[UU
   }
 
   def shuffle: GoFish = this.copy(deck=deck.map(x=>x.shuffle()))
+  def dealToOne(numCards: Int, toDealTo: UUID): Option[GoFish] = {
+    if(!deck.isDefined || numCards > deck.getOrElse(emptyDeck).size){
+      None
+    }else{
+      val (toGive, newDeck) = deck.getOrElse(emptyDeck).toList.splitAt(numCards)
+      val newPlayers = this.players.map(x=>if(x.id == toDealTo){x.giveCards(toGive)}else{x})
+      Some(this.copy(players = newPlayers, deck = Some(Deck(newDeck))))
+    }
+  }
   def dealToAll(numCards: Int): Option[GoFish] = {
     val nPlayers: Int = players.size
     val totalCards = numCards*nPlayers
@@ -154,16 +165,16 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: Option[UU
   def gameOver: Boolean = players.map(x => x.points).sum == 13
 }
 object GoFish {
-  val goFishDefault = GoFish(List(), Some(defaultDeck), UUID.randomUUID())
+  val goFishStart = GoFish(List(), Some(defaultDeck), None, Waiting)
   val goFishNoRefsPreDeal = {
-    val player1 = PlayerData(UUID.randomUUID(), None, "player1", Some(emptyDeck), 0, List())
-    val player2 = PlayerData(UUID.randomUUID(), None, "player2", Some(emptyDeck), 0, List())
-    val player3 = PlayerData(UUID.randomUUID(), None, "player3", Some(emptyDeck), 0, List())
-    val player4 = PlayerData(UUID.randomUUID(), None, "player4", Some(emptyDeck), 0, List())
+    val player1 = defaultPlayerReadied
+    val player2 = defaultPlayerReadied.copy(name = "player2")
+    val player3 = defaultPlayerReadied.copy(name = "player3")
+    val player4 = defaultPlayerReadied.copy(name = "player4")
     GoFish(List(player1, player2, player3, player4), Some(defaultDeck), Some(player1.id), Waiting)
   }
   val goFishNoRefsPostDeal = {
-    goFishNoRefsPreDeal.dealToAll(7).get
+    goFishNoRefsPreDeal.dealToAll(CARDSPERPLAYER).get
   }
   sealed trait GameStatus
   case object Waiting extends GameStatus

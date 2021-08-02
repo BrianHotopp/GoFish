@@ -1,8 +1,9 @@
 package actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import gamedata.DeckOfCards.Deck.defaultDeck
+import gamedata.DeckOfCards.Deck.{defaultDeck, emptyDeck}
 import gamedata.DeckOfCards.{Deck, Rank}
+import gamedata.GoFish.{Waiting, goFishStart}
 import gamedata.{GoFish, PlayerData}
 import websocket.{PushState, WSMessage}
 
@@ -13,6 +14,9 @@ object Room {
   final case class Join(player: PlayerData) extends Command
   final case class Leave(playerId: UUID, replyTo: ActorRef[Response]) extends Command
   final case class AskForRank(askerId: UUID, askeeId: UUID, rank: Rank) extends Command
+  final case class DealInPlayer(toDealInId: UUID) extends Command
+  final case class ReadyPlayer(toReadyId: UUID) extends Command
+  final case object StartGame extends Command
   sealed trait Response
   final case class Running(roomId: UUID) extends Response
   final case class Stopped(roomId: UUID) extends Response
@@ -22,9 +26,12 @@ object Room {
   def apply(uuid: UUID): Behavior[Room.Command] ={
     Behaviors.setup[Command] {
       _ =>
-        roomBehavior(RoomData(uuid, GoFish(List(), Some(defaultDeck), turn = UUID.randomUUID())))
+        roomBehavior(RoomData(uuid, goFishStart))
     }
   }
+
+  val MINPLAYERS = 2
+  val CARDSPERPLAYER = 7
 
   def roomBehavior(data: RoomData): Behavior[Room.Command] ={
     Behaviors.receive[Command](
@@ -42,6 +49,32 @@ object Room {
             val newRoomData = data.copy(gameData = newGameData)
             pushState(newRoomData)
             Behaviors.same
+          case ReadyPlayer(toReadyId) =>
+            // ready the player passed in
+            val newGameData = data.gameData.copy(players = data.gameData.players.map(x=>if(x.id == toReadyId){x.copy(readied = true)}else{x}))
+            val newRoomData = data.copy(gameData = newGameData)
+            pushState(newRoomData)
+            roomBehavior(newRoomData)
+          case DealInPlayer(toDealInId) =>
+            val dealAttempt = data.gameData.dealToOne(CARDSPERPLAYER, toDealInId)
+            dealAttempt match {
+              case Some(dealtGameData) =>
+                // ready the player we just dealt in
+                val newGameData = dealtGameData.copy(players = dealtGameData.players.map(x=>if(x.id == toDealInId){x.copy(readied = true)}else{x}))
+                val newRoomData = data.copy(gameData = newGameData)
+                roomBehavior(newRoomData)
+              case None => Behaviors.same // we were unable to deal the cards to the player
+            }
+          case StartGame =>
+            if(data.gameData.players.size > MINPLAYERS && data.gameData.allPlayersReady()){
+              val newGameData = data.gameData.dealToAll(CARDSPERPLAYER).get.copy(gameStatus = GoFish.Running)
+              val newRoomData = data.copy(gameData = newGameData)
+              pushState(newRoomData)
+              roomBehavior(data = newRoomData)
+            }else{
+              Behaviors.same
+            }
+
           case Leave(userId, roomRefToReplyTo) =>
             val newGameData = data.gameData.removePlayerById(userId)
             val newRoomData = data.copy(gameData = newGameData)

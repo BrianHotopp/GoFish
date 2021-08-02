@@ -1,9 +1,9 @@
 package actors
-import actors.Room.{AskForRank, Leave}
+import actors.Room.{AskForRank, DealInPlayer, Leave, ReadyPlayer, StartGame}
 import actors.RoomManager.createRoomRef
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import websocket.{Ask, PushState, UserJoin, WSMessage}
+import websocket.{Ask, DealIn, PushState, Ready, Start, UserJoin, WSMessage}
 import akka.actor.{ActorRef => UntypedRef}
 import gamedata.DeckOfCards.Deck.{defaultDeck, emptyDeck}
 import gamedata.DeckOfCards.{Deck, Rank, Spade, Two}
@@ -71,7 +71,7 @@ object RoomManager {
                   val roomActor = createRoomRef(roomId, context)
                   val newRoomManagerData = roomManagerData.addRoom(roomId, roomActor)
                   context.watch(roomActor)
-                  val newUser = PlayerData(userId, Some(userRef), name, Some(defaultDeck), 0, List())
+                  val newUser = PlayerData(userId, Some(userRef), name, Some(defaultDeck), 0, List(), false)
                   // add our new user to our new room
                   roomActor ! Room.Join(newUser)
                   roomManagerBehavior(newRoomManagerData, roomResponderActor)
@@ -84,7 +84,7 @@ object RoomManager {
                   case WSMessage(roomId, userId, UserJoin(name)) =>
                     val newRoomManagerData = roomManagerData.addRoom(roomId, roomActor)
                     context.watch(roomActor)
-                    val newUser = PlayerData(userId, Some(userRef), name, Some(emptyDeck), 0, List())
+                    val newUser = PlayerData(userId, Some(userRef), name, Some(emptyDeck), 0, List(), readied = false)
                     // add our new user to our new room
                     roomActor ! Room.Join(newUser)
                     roomManagerBehavior(newRoomManagerData, roomResponderActor)
@@ -121,8 +121,14 @@ object RoomManager {
     // context is a handle to the roomManager itself
     message match {
       // should not be used because it can only come from materializing the user session on the backend
+      case WSMessage(roomId, userId, DealIn(toDealInId)) =>
+        room ! DealInPlayer(toDealInId)
+      case WSMessage(roomId, userId, Ready) =>
+        room ! ReadyPlayer(userId)
       case WSMessage(roomId, userId, Ask(askeeId, rank)) =>
         room ! AskForRank(userId, askeeId, rank)
+      case WSMessage(roomId, userId, Start) =>
+        room ! StartGame
       case _ => ()
     }
   }
