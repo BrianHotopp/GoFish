@@ -11,11 +11,13 @@ import gamedata.{GoFish, PlayerData, RoomManagerData}
 
 import java.util.UUID
 object RoomManager {
+  // every time a ws message comes in, there are hidden semantics
+  // for a connect to room message, in its websocket message the room id may or may not be in the server yet, and the user id may or may not be in the server yet
+  // for messages handled by the incomewsmessage handler, the room and user should already exist
   sealed trait Command
   // this can come in straight from the api
   final case class CreateRoom(replyTo: ActorRef[Response]) extends Command
-
-  // this is a ws message from the client
+  // this is a ws message from the client which is specific to a room
   final case class IncomeWSMessage(message: WSMessage)                 extends Command
   // comes in from the client websocket stream when the websocket connection is closed
   final case object UnsupportedWSMessage                               extends Command

@@ -2,6 +2,7 @@ package gamedata
 
 import gamedata.DeckOfCards.Deck.{defaultDeck, emptyDeck}
 import gamedata.DeckOfCards.{Card, Deck, Rank}
+import gamedata.GoFish.GameStatus
 import play.api.libs.json.{Format, Json}
 
 import java.util.UUID
@@ -9,7 +10,7 @@ import java.util.UUID
 
 // generic model of a gamestate
 // deck is optional because from the perspective of the players, they don't know what the deck is
-case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
+case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: Option[UUID], gameStatus: GameStatus) {
   def playerHas(uuid: UUID, card: Card): Boolean ={
     players.find(x => x.id == uuid) match {
       case Some(player) => player.hasCard(card)
@@ -20,7 +21,7 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
   def addPlayer(player: PlayerData): GoFish = {
     if(players.size == 0){
       // if this is the first player to be added to the game, set the turn
-      this.copy(players = player::players, turn=player.id)
+      this.copy(players = player::players, turn=Some(player.id))
     }else{
       this.copy(players = player::players)
     }
@@ -29,12 +30,12 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
   def removePlayerById(playerId: UUID): GoFish = {
     val (toRemove, toRemain) = this.players.partition(x=>x.id == playerId)
     val removalIndex = players.indexWhere(_.id == playerId)
-    val turnIndex = players.indexWhere(_.id == turn)
+    val turnIndex = players.indexWhere(_.id == turn.get)
     if(turnIndex > removalIndex){
       // if the player whose turn it is lies to the right of the player who is leaving, we must bump the turn up by one
       // mod toRemain.size should be irrelevant; it's just there to explicitly bound the index
       val newTurn = players((turnIndex + 1) % toRemain.size).id
-      this.copy(players = toRemain, deck = Option(this.deck.get.addDeck(toRemove.head.hand.get)), turn = newTurn).shuffle
+      this.copy(players = toRemain, deck = Option(this.deck.get.addDeck(toRemove.head.hand.get)), turn = Some(newTurn)).shuffle
     }else{
       this.copy(players = toRemain, deck = Option(this.deck.get.addDeck(toRemove.head.hand.get))).shuffle
     }
@@ -91,9 +92,9 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
   }
   def incrementTurn(): GoFish = {
     // returns the current game state but with the turn incremented
-    val turnIndex = players.indexWhere(_.id == turn)
+    val turnIndex = players.indexWhere(_.id == turn.get)
     val newTurn = players((turnIndex + 1) % players.size).id
-    this.copy(turn=newTurn)
+    this.copy(turn=Some(newTurn))
   }
   def askForCard(wantedRank: Rank, askerId: UUID, askeeId: UUID): GoFish = {
     (players.find(x=>x.id == askerId), players.find(x=>x.id == askeeId)) match {
@@ -153,16 +154,21 @@ case class GoFish(players: List[PlayerData], deck: Option[Deck], turn: UUID) {
   def gameOver: Boolean = players.map(x => x.points).sum == 13
 }
 object GoFish {
+  val goFishDefault = GoFish(List(), Some(defaultDeck), UUID.randomUUID())
   val goFishNoRefsPreDeal = {
     val player1 = PlayerData(UUID.randomUUID(), None, "player1", Some(emptyDeck), 0, List())
     val player2 = PlayerData(UUID.randomUUID(), None, "player2", Some(emptyDeck), 0, List())
     val player3 = PlayerData(UUID.randomUUID(), None, "player3", Some(emptyDeck), 0, List())
     val player4 = PlayerData(UUID.randomUUID(), None, "player4", Some(emptyDeck), 0, List())
-    GoFish(List(player1, player2, player3, player4), Some(defaultDeck), player1.id)
+    GoFish(List(player1, player2, player3, player4), Some(defaultDeck), Some(player1.id), Waiting)
   }
   val goFishNoRefsPostDeal = {
     goFishNoRefsPreDeal.dealToAll(7).get
   }
+  sealed trait GameStatus
+  case object Waiting extends GameStatus
+  case object Running extends GameStatus
+  case object Finished extends GameStatus
 }
 
 

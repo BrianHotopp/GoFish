@@ -7,7 +7,7 @@ import akka.actor.{ActorRef => UntypedRef}
 import gamedata.DeckOfCards.Deck.emptyDeck
 import play.api.libs.json.{Format, Json}
 // hand is optional because for some players that will be in a gamestate, their hands will be unknown from the perspective of other players
-case class PlayerData(id: UUID, ref: Option[UntypedRef], name: String, hand: Option[Deck], points: Int, ranks: List[Rank]) {
+case class PlayerData(id: UUID, ref: Option[UntypedRef], name: String, hand: Option[Deck], points: Int, ranks: List[Rank], readied: Boolean) {
   def giveCard(card: Card): PlayerData = this.copy(hand = hand.map(x=>x.addToTop(card)))
   // for these functions the design choice is to take stlib collections where possible and return our custom types
   def giveCards(toGive: List[Card]): PlayerData ={ this.copy(hand = Option(Deck(toGive:::hand.get.toList)))}
@@ -53,9 +53,12 @@ case class PlayerData(id: UUID, ref: Option[UntypedRef], name: String, hand: Opt
 }
 object PlayerData {
   val defaultPlayer = {
-    PlayerData(UUID.randomUUID(), None, "player1", Some(emptyDeck), 0, List())
+    PlayerData(UUID.randomUUID(), None, "player1", Some(emptyDeck), 0, List(), readied = false)
+  }
+  val defaultPlayerReadied = {
+    PlayerData(UUID.randomUUID(), None, "player1", Some(emptyDeck), 0, List(), readied = true)
   }
   val defaultPlayerWCards = {
-    defaultPlayer.copy(hand = Some(Deck(List(Card(Two, Spade), Card(Three, Heart)))))
+    defaultPlayerReadied.copy(hand = Some(Deck(List(Card(Two, Spade), Card(Three, Heart)))))
   }
 }

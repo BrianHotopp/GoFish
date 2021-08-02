@@ -17,6 +17,9 @@ class RoomManagerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     managerRef ! RoomManager.CreateRoom(sender.ref)
     sender.expectMessageType[RoomManager.RoomId]
   }
+  it should "connect to a room" in {
+
+  }
 }
 
 
