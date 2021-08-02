@@ -67,7 +67,8 @@ object Room {
             }
           case StartGame =>
             if(data.gameData.players.size > MINPLAYERS && data.gameData.allPlayersReady()){
-              val newGameData = data.gameData.dealToAll(CARDSPERPLAYER).get.copy(gameStatus = GoFish.Running)
+              // deal to all players, set first turn, set game status to running
+              val newGameData = data.gameData.dealToAll(CARDSPERPLAYER).get.copy(turn = Some(data.gameData.players(0).id), gameStatus = GoFish.Running)
               val newRoomData = data.copy(gameData = newGameData)
               pushState(newRoomData)
               roomBehavior(data = newRoomData)
